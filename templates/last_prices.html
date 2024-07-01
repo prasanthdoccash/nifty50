@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis</title>
+    <!-- Include Bootstrap CSS for styling -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">MyApp</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/delivery">Delivery</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/input_symbol">Search</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/last_prices">NIFTY50</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+    <h1>Nifty50 Price</h1>
+    <p>Last Refreshed: {{ last_refreshed }}</p>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Last Price</th>
+                
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in data %}
+            <tr>
+                <td>{{ item['Symbol'] }}</td>
+                <td>{{ item['Last Price'] }}</td>
+                
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
