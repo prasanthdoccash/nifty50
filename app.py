@@ -5,12 +5,15 @@ from jugaad_data.nse import stock_df
 import pandas as pd
 from live import final_decision
 import os
-cache_dir = '/opt/render/.cache/nsehistory-stock'
+import shutil
+# Check if the directory exists
+if os.path.exists(cache_dir):
+    # Remove the directory and all its contents
+    shutil.rmtree(cache_dir)
+    print(f"Deleted existing directory '{cache_dir}'.")
 
-try:
-    os.makedirs(cache_dir, exist_ok=True)  # Create directory if it doesn't exist
-except FileExistsError:
-    print(f"Directory '{cache_dir}' already exists.")
+# Now create the directory
+os.makedirs(cache_dir)
 
 app = Flask(__name__)
 
