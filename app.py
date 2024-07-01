@@ -14,7 +14,7 @@ def fetch_intraday_data(symbols, start_date, end_date):
         df = stock_df(symbol=symbol, from_date=start_date, to_date=end_date, series="EQ")
         if not df.empty:
             all_data[symbol] = df
-    print(all_data)
+    #print(all_data)
     return all_data
 
 def calculate_vwap(df):
