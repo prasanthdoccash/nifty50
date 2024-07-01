@@ -4,6 +4,13 @@ from jugaad_data.nse import NSELive
 from jugaad_data.nse import stock_df
 import pandas as pd
 from live import final_decision
+import os
+cache_dir = '/opt/render/.cache/nsehistory-stock'
+
+try:
+    os.makedirs(cache_dir, exist_ok=True)  # Create directory if it doesn't exist
+except FileExistsError:
+    print(f"Directory '{cache_dir}' already exists.")
 
 app = Flask(__name__)
 
