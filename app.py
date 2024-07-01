@@ -6,6 +6,7 @@ import pandas as pd
 from live import final_decision
 import os
 import shutil
+cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
 if os.path.exists(cache_dir):
     # Remove the directory and all its contents
