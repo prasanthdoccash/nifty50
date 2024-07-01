@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Analysis</title>
+    <title>Intraday Analysis</title>
     <!-- Include Bootstrap CSS for styling -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
@@ -25,11 +25,30 @@
                     <a class="nav-link" href="/input_symbol">Search</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/last_prices">NIFTY50 LTP</a>
+                    <a class="nav-link" href="/last_prices">NIFTY50</a>
                 </li>
             </ul>
         </div>
     </nav>
-    
+    <div class="container">
+        <h1>NIFTY50</h1>
+        <div class="form-group">
+            <a class="btn btn-success" href="/delivery">Delivery</a>
+            
+            <a class="btn btn-success" href="/last_prices">Current Price</a>
+            
+        </div>
+        
+
+    </div>
+    <div class="container">
+        <h1>Search Symbol</h1>
+        <div class="form-group">
+            
+            <a class="btn btn-success" href="/input_symbol">Search</a>
+        </div>
+        
+        
+    </div>
 </body>
 </html>
