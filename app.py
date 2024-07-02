@@ -335,8 +335,8 @@ def delivery_longdate(symbol):
         price_data = calculate_macd(df)
         macd_crossover = df['MACD_Crossover'].iloc[-1]  # Get the last crossover signal
         
-    return df['pullback_buy_action'],df['MACD_Crossover']
-        
+    #return df['pullback_buy_action'],df['MACD_Crossover']
+    return pullback, macd_crossover
 @app.route('/delivery')
 def delivery():
     symbols1 = request.args.get('symbols')
@@ -452,7 +452,7 @@ def intraday_high_low(intra_day_data, last_price,open_price):
     
     elif last_price < low_threshold:
         intra_trade_action = 'Sell'
-    else: intra_trade_action = 'HOLD'
+    else: intra_trade_action = 'Hold'
     
     global todays_high_at_specific_time
     if todays_high_at_specific_time == 0 or last_price > todays_high_at_specific_time:
@@ -499,24 +499,10 @@ def stock_analysis():
                 'CLOSE': [open_price, last_price, intraday_high, intraday_low]  # Example data points
             })
             
-            # Calculate EMAs for 9-period and 50-period
-            price_data = calculate_ema9(price_data, span=9)
-            price_data = calculate_ema50(price_data, span=50)
-            ema_9 = price_data['EMA_9'].iloc[-1] if 'EMA_9' in price_data.columns else 0
-            ema_50 = price_data['EMA_50'].iloc[-1] if 'EMA_50' in price_data.columns else 0
-            
-            # Determine pullback buy condition
-            if last_price <= ema_9 and ema_9 > ema_50:
-                
-                pullback_buy_action = 'Pullback Buy'
-            else:
-                pullback_buy_action = 'Hold'
-
-            # Calculate MACD and identify crossovers
-            price_data = calculate_macd(price_data)
-            macd_crossover = price_data['MACD_Crossover'].iloc[-1]  # Get the last crossover signal
-
-            
+            #pullback_buy_action,macd_crossover = delivery_longdate(symbol)
+            price_data['pullback_buy_action'],price_data['MACD_Crossover'] = delivery_longdate(symbol)
+            pullback_buy_action =price_data['pullback_buy_action'].iloc[-1]
+            macd_crossover = price_data['MACD_Crossover'].iloc[-1]
 
             symbol_data = {'symbol': symbol,
                 'last_price': last_price,
