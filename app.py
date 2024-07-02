@@ -6,7 +6,7 @@ import pandas as pd
 from live import final_decision
 import os
 import shutil
-'''cache_dir = '/opt/render/.cache/nsehistory-stock'
+cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
 if os.path.exists(cache_dir):
     # Remove the directory and all its contents
@@ -14,7 +14,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)'''
+os.makedirs(cache_dir)
 
 app = Flask(__name__)
 
@@ -532,5 +532,5 @@ def stock_analysis():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
-    #app.run(debug=True, host='0.0.0.0', port=80)
+    #app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=80)
