@@ -26,6 +26,8 @@
             text-align: center;
             padding: 10px 0;
             width: 100%;
+            position: fixed;
+            bottom: 0;
         }
 
         footer p {
@@ -44,7 +46,6 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/">Home</a>
                 </li>
-                
                 <li class="nav-item">
                     <a class="nav-link" href="/input_symbol">Search</a>
                 </li>
@@ -57,38 +58,40 @@
             </ul>
         </div>
     </nav>
-    <div class="container">
+    <div class="container mt-4">
         <h1>NIFTY50</h1>
-        <div class="form-group">
-            <a class="btn btn-success" href="/delivery">Delivery</a>
-            
-            
-            <a class="btn btn-success" href="/intraday">Intraday</a>
+        <div class="row">
+            <div class="col-12 col-md-6 mb-2">
+                <a class="btn btn-success btn-block" href="/delivery">Delivery</a>
+            </div>
+            <div class="col-12 col-md-6">
+                <a class="btn btn-success btn-block" href="/intraday">Intraday</a>
+            </div>
         </div>
-        
-
     </div>
-    <div class="container">
+    <div class="container mt-4">
         <h1>Search Symbol</h1>
-        <div class="form-group">
-            
-            <a class="btn btn-success" href="/input_symbol">Search</a>
+        <div class="row">
+            <div class="col-12 col-md-6">
+                <a class="btn btn-success btn-block" href="/input_symbol">Search</a>
+            </div>
         </div>
-        
-        
     </div>
-    <div class="container">
+    <div class="container mt-4">
         <p>Note:<br>
             1. Only NSE symbols are allowed.<br>
-            2. Only for education purpose, not resposible for any loss incurred. <br>
-            3. Click on Delivery button to get long-term investment suggestion on all Nifty50 stocks. <br>
-            4. Click on Intraday button to get intraday trading suggestion on all Nifty50 stocks.<br>
-            5. Click on Search button to search for long-term or intraday suggestions with a particular symbol. List of symbols are provided in the same page.<br>
-            6. Symbols highlighted in Blue indicates Super Buy.<br>
-            7. Symbols highlighted in Green indicates Buy.<br>
+            2. Only for educational purposes, not responsible for any loss incurred. <br>
+            3. Click on the Delivery button to get long-term investment suggestions on all Nifty50 stocks. <br>
+            4. Click on the Intraday button to get intraday trading suggestions on all Nifty50 stocks.<br>
+            5. Click on the Search button to search for long-term or intraday suggestions with a particular symbol. A list of symbols is provided on the same page.<br>
+            6. Symbols highlighted in Blue indicate Super Buy.<br>
+            7. Symbols highlighted in Green indicate Buy.<br>
         </p>
     </div>
-
+    <footer>By Prasanth N</footer>
+    <!-- Include Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
-<footer>By Prasanth N</footer>
 </html>
