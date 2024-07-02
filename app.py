@@ -408,7 +408,7 @@ def market_sentiment(open_price, previous_close):
         return 'Bearish'
 
 # Function to identify intraday high and low and determine intra trade action
-def intraday_high_low(intra_day_data, last_price):
+def intraday_high_low(intra_day_data, last_price,open_price):
     
     intraday_high = intra_day_data.get('max', 0)
     
@@ -439,9 +439,9 @@ def intraday_high_low(intra_day_data, last_price):
      # Check for Break Buy condition
     break_buy_action = 'Buy' if last_price > todays_high_at_specific_time else 'Hold'
     # Calculate stop-loss level (below intraday low)
-    stop_loss = intraday_low * 0.99  # Example: 1% below intraday low
-    # Calculate target level (below intraday low)
-    target = last_price * 1.01  # Example: 1% below intraday low
+    stop_loss = open_price * 0.99  # Example: 1% below intraday low
+    # Calculate target level 
+    target = open_price * 1.01  # Example: 1% below intraday low
     return intraday_high, intraday_low, intra_trade_action, break_buy_action, stop_loss,target
 
 # Route to fetch stock data and render HTML template
@@ -471,7 +471,7 @@ def stock_analysis():
             # Get intraday high, low, and intra trade action
             intra_day_data = stock_data.get('intraDayHighLow', {})
             
-            intraday_high, intraday_low, intra_trade_action, break_buy_action, stop_loss,target = intraday_high_low(intra_day_data, last_price)
+            intraday_high, intraday_low, intra_trade_action, break_buy_action, stop_loss,target = intraday_high_low(intra_day_data, last_price,open_price)
             
             price_data = pd.DataFrame({
                 'CLOSE': [open_price, last_price, intraday_high, intraday_low]  # Example data points
