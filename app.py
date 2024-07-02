@@ -25,7 +25,7 @@ def fetch_intraday_data(symbols, start_date, end_date):
         df = stock_df(symbol=symbol, from_date=start_date, to_date=end_date, series="EQ")
         if not df.empty:
             all_data[symbol] = df
-    
+    print(all_data)
     return all_data
 
 def calculate_vwap(df):
@@ -266,7 +266,7 @@ def last_prices():
         #return res_ltp1
     return render_template('last_prices.html', data=results, last_refreshed=last_refreshed)
 
-@app.route('/last_prices1')
+
 def last_prices1(res_ltp1):
     
     #symbols = request.args.get('symbols')
@@ -278,7 +278,7 @@ def last_prices1(res_ltp1):
         print(f"Error fetching live data: {str(e)}")
         data = {}
     
-    last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    #last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     #res_ltp1 = []
     results = []
@@ -294,7 +294,7 @@ def last_prices1(res_ltp1):
         res_ltp1 = symbol_data['Last Price']
         
         return res_ltp1
-    return render_template('last_prices.html', data=results, last_refreshed=last_refreshed)
+    #return render_template('last_prices.html', data=results, last_refreshed=last_refreshed)
 
 @app.route('/input_symbol', methods=['GET', 'POST'])
 def input_symbol():
@@ -332,7 +332,7 @@ def delivery_longdate(symbol):
         
         pullback = df['pullback_buy_action'].iloc[-1]
         # Calculate MACD and identify crossovers
-        price_data = calculate_macd(df)
+        calculate_macd(df)
         macd_crossover = df['MACD_Crossover'].iloc[-1]  # Get the last crossover signal
         
     #return df['pullback_buy_action'],df['MACD_Crossover']
@@ -341,9 +341,7 @@ def delivery_longdate(symbol):
 def delivery():
     symbols1 = request.args.get('symbols')
     symbols = symbols1.split(',') if symbols1 else predefined_symbols
-    #symbols = predefined_symbols
     
-    res_ltp =[]
     today = dt.date.today()
     end_date = today #- dt.timedelta(days=1)  # Yesterday's date
     start_date = end_date - dt.timedelta(days=50)  # 50 days before yesterday
@@ -360,8 +358,8 @@ def delivery():
             df = calculate_rsi(df)
             df = calculate_sma(df)
             df = calculate_ema(df)
-            df = calculate_ema9(df)
-            df = calculate_ema50(df)
+            #df = calculate_ema9(df)
+            #df = calculate_ema50(df)
             df = calculate_bollinger_bands(df)
             df = calculate_bid_ask_spread(df)
             df = calculate_turnover_ratio(df)
@@ -369,14 +367,10 @@ def delivery():
             current_price = last_prices1(symbol)
             
             #current_price = df['CH_LAST_TRADED_PRICE'].iloc[-1] if 'CH_LAST_TRADED_PRICE' in df.columns else 'N/A'
-            company_name = df['CH_SYMBOL'].iloc[0] if 'CH_SYMBOL' in df.columns else 'N/A'
-            ###############################################
-                       
+            #company_name = df['CH_SYMBOL'].iloc[0] if 'CH_SYMBOL' in df.columns else 'N/A'
             
             df['pullback_buy_action'],df['MACD_Crossover'] = delivery_longdate(symbol)
             
-            
-            ###############################################
             # Prepare indicators data
             indicators_data = {}
             if 'VWAP' in df.columns:
