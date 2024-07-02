@@ -6,7 +6,7 @@ import pandas as pd
 from live import final_decision
 import os
 import shutil
-cache_dir = '/opt/render/.cache/nsehistory-stock'
+'''cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
 if os.path.exists(cache_dir):
     # Remove the directory and all its contents
@@ -14,7 +14,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 
 app = Flask(__name__)
 
@@ -25,7 +25,7 @@ def fetch_intraday_data(symbols, start_date, end_date):
         df = stock_df(symbol=symbol, from_date=start_date, to_date=end_date, series="EQ")
         if not df.empty:
             all_data[symbol] = df
-    #print(all_data)
+    
     return all_data
 
 def calculate_vwap(df):
@@ -55,7 +55,24 @@ def calculate_sma(df, period=20):
 def calculate_ema(df, span=20):
     if 'CLOSE' in df.columns:
         df['EMA'] = df['CLOSE'].ewm(span=span, min_periods=span).mean()
+        
     return df
+# Function to calculate EMA
+def calculate_ema9(df, span=9):
+    if 'CLOSE' in df.columns:
+        
+        #ema_label = f'EMA_{span}'
+        df['EMA_9'] = df['CLOSE'].ewm(span=span, min_periods=span).mean()
+        
+    return df
+def calculate_ema50(df, span=50):
+    if 'CLOSE' in df.columns:
+        
+        #ema_label = f'EMA_{span}'
+        df['EMA_50'] = df['CLOSE'].ewm(span=span, min_periods=span).mean()
+        
+    return df
+
 
 def calculate_bollinger_bands(df, window=20, std_dev=2):
     if 'CLOSE' in df.columns:
@@ -102,6 +119,7 @@ def determine_sentiment(df):
         else:
             sentiment['SMA'] = 'Bullish'
     
+             
     if 'EMA' in df.columns and 'CLOSE' in df.columns:
         if df['CLOSE'].iloc[-1] < df['EMA'].iloc[-1]:
             sentiment['EMA'] = 'Bearish'
@@ -134,8 +152,29 @@ def determine_sentiment(df):
     
     return sentiment
 
+# Function to calculate MACD and identify crossovers
+def calculate_macd(df, n_fast=12, n_slow=26, n_signal=9):
+    # Calculate EMAs
+    df['EMA_fast'] = df['CLOSE'].ewm(span=n_fast, min_periods=1, adjust=False).mean()
+    df['EMA_slow'] = df['CLOSE'].ewm(span=n_slow, min_periods=1, adjust=False).mean()
+    
+    # Calculate MACD line
+    df['MACD'] = df['EMA_fast'] - df['EMA_slow']
+    
+    # Calculate Signal line
+    df['Signal'] = df['MACD'].ewm(span=n_signal, min_periods=1, adjust=False).mean()
+    
+    # Identify crossovers
+    
+    df['MACD_Crossover'] = 'Hold'
+    df.loc[(df['MACD'] > df['Signal']) & (df['MACD'].shift(1) <= df['Signal'].shift(1)), 'MACD_Crossover'] = 'Bullish'
+    df.loc[(df['MACD'] < df['Signal']) & (df['MACD'].shift(1) >= df['Signal'].shift(1)), 'MACD_Crossover'] = 'Bearish'
+    
+    return df
+
 def final_decision(sentiment):
     # Decision logic based on combined sentiments
+    
     if (sentiment.get('RSI') == 'Undervalued' and 
         sentiment.get('SMA') != 'Bearish' and 
         sentiment.get('EMA') != 'Bearish'):
@@ -275,7 +314,7 @@ def delivery():
     res_ltp =[]
     today = dt.date.today()
     end_date = today #- dt.timedelta(days=1)  # Yesterday's date
-    start_date = end_date - dt.timedelta(days=40)  # 50 days before yesterday
+    start_date = end_date - dt.timedelta(days=80)  # 50 days before yesterday
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     #start_date = dt.date(2023, 6, 1)
     #end_date = dt.date(2023, 6, 28)
@@ -289,6 +328,8 @@ def delivery():
             df = calculate_rsi(df)
             df = calculate_sma(df)
             df = calculate_ema(df)
+            df = calculate_ema9(df)
+            df = calculate_ema50(df)
             df = calculate_bollinger_bands(df)
             df = calculate_bid_ask_spread(df)
             df = calculate_turnover_ratio(df)
@@ -297,7 +338,23 @@ def delivery():
             
             #current_price = df['CH_LAST_TRADED_PRICE'].iloc[-1] if 'CH_LAST_TRADED_PRICE' in df.columns else 'N/A'
             company_name = df['CH_SYMBOL'].iloc[0] if 'CH_SYMBOL' in df.columns else 'N/A'
+            ####################################
+                       
+            ema_9 = df['EMA_9'].iloc[-1] if 'EMA_9' in df.columns else 0
+            ema_50 = df['EMA_50'].iloc[-1] if 'EMA_50' in df.columns else 0
             
+            # Determine pullback buy condition
+            if current_price <= ema_9 and ema_9 > ema_50:
+                
+                df['pullback_buy_action'] = 'Buy'
+            else:
+                df['pullback_buy_action'] = 'Hold'
+            
+            # Calculate MACD and identify crossovers
+            price_data = calculate_macd(df)
+            macd_crossover = df['MACD_Crossover'].iloc[-1]  # Get the last crossover signal
+            
+            ###############################################
             # Prepare indicators data
             indicators_data = {}
             if 'VWAP' in df.columns:
@@ -308,13 +365,16 @@ def delivery():
                 indicators_data['SMA'] = round(df['SMA'].iloc[-1],2)
             if 'EMA' in df.columns:
                 indicators_data['EMA'] = round(df['EMA'].iloc[-1],2)
+            if 'MACD_Crossover' in df.columns:
+                indicators_data['MACD_Crossover'] = df['MACD_Crossover'].iloc[-1]
             if 'Upper Band' in df.columns and 'Lower Band' in df.columns:
                 indicators_data['Bollinger Bands'] = f"{round(df['Upper Band'].iloc[-1],2)}, {round(df['Lower Band'].iloc[-1],2)}"
             if 'Bid-Ask Spread' in df.columns:
                 indicators_data['Bid-Ask Spread'] = round(df['Bid-Ask Spread'].iloc[-1],2)
             if 'Turnover Ratio' in df.columns:
                 indicators_data['Turnover Ratio'] = round(df['Turnover Ratio'].iloc[-1],2)
-            
+            if 'pullback_buy_action' in df.columns:
+                indicators_data['pullback_buy_action'] = df['pullback_buy_action'].iloc[-1]
             # Determine sentiment for each indicator
             sentiment = determine_sentiment(df)
             
@@ -338,5 +398,139 @@ def delivery():
             continue
     return render_template('intraday_analysis.html', results=results, last_refreshed=last_refreshed)
 
+# Global variable to store today's high at a specific time
+todays_high_at_specific_time = 0
+# Function to determine market sentiment (Bullish or Bearish)
+def market_sentiment(open_price, previous_close):
+    if open_price > previous_close:
+        return 'Bullish'
+    else:
+        return 'Bearish'
+
+# Function to identify intraday high and low and determine intra trade action
+def intraday_high_low(intra_day_data, last_price):
+    
+    intraday_high = intra_day_data.get('max', 0)
+    
+    intraday_low = intra_day_data.get('min', 0)
+    
+    # Define the threshold for "near" as a percentage of the price range
+    threshold = 0.005  # 1% for example
+
+    # Calculate thresholds for high and low
+    high_threshold = intraday_high - (intraday_high * threshold)
+    
+    low_threshold = intraday_low + (intraday_low * threshold)
+    
+
+    if last_price >= high_threshold:
+        
+        
+        intra_trade_action = 'Buy'
+    
+    elif last_price < low_threshold:
+        intra_trade_action = 'Sell'
+    else: intra_trade_action = 'HOLD'
+    
+    global todays_high_at_specific_time
+    if todays_high_at_specific_time == 0 or last_price > todays_high_at_specific_time:
+        todays_high_at_specific_time = intraday_high
+        
+     # Check for Break Buy condition
+    break_buy_action = 'Buy' if last_price > todays_high_at_specific_time else 'Hold'
+    # Calculate stop-loss level (below intraday low)
+    stop_loss = intraday_low * 0.99  # Example: 1% below intraday low
+    # Calculate target level (below intraday low)
+    target = last_price * 1.01  # Example: 1% below intraday low
+    return intraday_high, intraday_low, intra_trade_action, break_buy_action, stop_loss,target
+
+# Route to fetch stock data and render HTML template
+@app.route('/intraday')
+def stock_analysis():
+    global todays_high_at_specific_time  # Access the global variable
+    #symbols = predefined_symbols  # Example symbol for demonstration
+    symbols1 = request.args.get('symbols')
+    symbols = symbols1.split(',') if symbols1 else predefined_symbols
+    
+    stock_analysis_data = []
+    
+    for symbol in symbols:
+        
+        try:
+            q = nse.stock_quote(symbol)
+            stock_data = q['priceInfo']
+
+            # Extract open price and previous close from priceInfo block
+            open_price = float(stock_data.get('open', 0))
+            previous_close = float(stock_data.get('previousClose', 0))
+            last_price = float(stock_data.get('lastPrice', 0))
+
+            # Calculate market sentiment
+            sentiment = market_sentiment(open_price, previous_close)
+
+            # Get intraday high, low, and intra trade action
+            intra_day_data = stock_data.get('intraDayHighLow', {})
+            
+            intraday_high, intraday_low, intra_trade_action, break_buy_action, stop_loss,target = intraday_high_low(intra_day_data, last_price)
+            
+            price_data = pd.DataFrame({
+                'CLOSE': [open_price, last_price, intraday_high, intraday_low]  # Example data points
+            })
+            
+            # Calculate EMAs for 9-period and 50-period
+            price_data = calculate_ema9(price_data, span=9)
+            price_data = calculate_ema50(price_data, span=50)
+            ema_9 = price_data['EMA_9'].iloc[-1] if 'EMA_9' in price_data.columns else 0
+            ema_50 = price_data['EMA_50'].iloc[-1] if 'EMA_50' in price_data.columns else 0
+            
+            # Determine pullback buy condition
+            if last_price <= ema_9 and ema_9 > ema_50:
+                
+                pullback_buy_action = 'Pullback Buy'
+            else:
+                pullback_buy_action = 'Hold'
+
+            # Calculate MACD and identify crossovers
+            price_data = calculate_macd(price_data)
+            macd_crossover = price_data['MACD_Crossover'].iloc[-1]  # Get the last crossover signal
+
+            
+
+            symbol_data = {'symbol': symbol,
+                'last_price': last_price,
+                'change': round(float(stock_data.get('change', 0)), 2),
+                'p_change': round(float(stock_data.get('pChange', 0)), 2),
+                'previous_close': previous_close,
+                'open_price': open_price,
+                'intraday_high': intraday_high,
+                'intraday_low': intraday_low,
+                'market_sentiment': sentiment,
+                'intra_trade_action': intra_trade_action,
+                'break_buy_action': break_buy_action,
+                'stop_loss': round(stop_loss, 2),
+                'target': round(target,2),
+                'macd_crossover': macd_crossover,
+                'pullback_buy_action': pullback_buy_action
+                           }
+            stock_analysis_data.append(symbol_data)
+            
+        except Exception as e:
+            print(f"Error fetching data for {symbol}: {str(e)}")
+            stock_data = {'lastPrice': 'N/A'}
+            sentiment = 'N/A'
+            intraday_high = 'N/A'
+            intraday_low = 'N/A'
+            intra_trade_action = 'N/A'
+            break_buy_action = 'N/A'
+            stop_loss = 'N/A'
+            target = 'N/A'
+            macd_crossover = 'N/A'
+            pullback_buy_action = 'N/A'
+        
+    return render_template('stock_analysis.html', stock_analysis_data=stock_analysis_data)
+    
+
+
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True)
+    #app.run(debug=True, host='0.0.0.0', port=80)
