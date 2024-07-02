@@ -6,6 +6,60 @@
     <title>Analysis</title>
     <!-- Include Bootstrap CSS for styling -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script>
+        var refreshInterval; // Variable to hold the interval ID
+
+        // Function to start or resume auto-refresh
+        function startAutoRefresh() {
+            refreshInterval = setInterval(function() {
+                location.reload();
+            }, 5000); // 5000 milliseconds = 5 seconds
+            updateRefreshTime(); // Update timestamp immediately on start
+            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
+        }
+
+        // Function to pause auto-refresh
+        function pauseAutoRefresh() {
+            clearInterval(refreshInterval); // Clear the interval
+            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Paused';
+        }
+
+        // Function to update last refreshed date and time
+        function updateRefreshTime() {
+            var now = new Date();
+            var formattedTime = now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+            var formattedDate = now.toLocaleDateString('en-US');
+            var refreshTime = formattedDate + ' ' + formattedTime;
+            document.getElementById('refreshTime').innerText = 'Last Refreshed: ' + refreshTime;
+        }
+
+        function downloadCSV() {
+            var csv = [];
+            var rows = document.querySelectorAll("table tr");
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = [], cols = rows[i].querySelectorAll("td, th");
+
+                for (var j = 0; j < cols.length; j++) {
+                    row.push(cols[j].innerText);
+                }
+                
+                csv.push(row.join(","));
+            }
+
+            var csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "stock_analysis.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+        // Call startAutoRefresh on page load
+        window.onload = function() {
+            startAutoRefresh();
+        };
+    </script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -25,11 +79,20 @@
                     <a class="nav-link" href="/input_symbol">Search</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/last_prices">NIFTY50 LTP</a>
+                    <a class="nav-link" href="/last_prices">NIFTY50</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/intraday">Intraday</a>
                 </li>
             </ul>
         </div>
     </nav>
+    <p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
+    <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
+
+    <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
+    <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
+    <button onclick="downloadCSV()">Download CSV</button><BR><BR>
     <div class="container">
     <h1>Nifty50 Price</h1>
     <p>Last Refreshed: {{ last_refreshed }}</p>
