@@ -38,7 +38,7 @@
             var encodedUri = encodeURI(csvContent);
             var link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "stock_analysis.csv");
+            link.setAttribute("download", "Delivery_analysis.csv");
             document.body.appendChild(link);
             link.click();
         }
@@ -78,7 +78,7 @@
     
     <button onclick="downloadCSV()">Download CSV</button><BR><BR><BR>
     <div class="container">
-    <h1>Nifty50 Delivery Analysis</h1>
+    <h1>Delivery Analysis</h1>
     <p>Last Refreshed: {{ last_refreshed }}</p>
     <table border="1">
         <thead>
