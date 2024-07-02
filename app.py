@@ -6,7 +6,7 @@ import pandas as pd
 from live import final_decision
 import os
 import shutil
-cache_dir = '/opt/render/.cache/nsehistory-stock'
+'''cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
 if os.path.exists(cache_dir):
     # Remove the directory and all its contents
@@ -14,7 +14,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 
 app = Flask(__name__)
 
@@ -305,6 +305,38 @@ def input_symbol():
     
     return render_template('input_symbol.html')
 
+def delivery_longdate(symbol):
+    symbols = [symbol]
+    
+    today = dt.date.today()
+    end_date = today #- dt.timedelta(days=1)  # Yesterday's date
+    start_date = end_date - dt.timedelta(days=80)  # 50 days before yesterday
+    
+    data = fetch_intraday_data(symbols, start_date, end_date)
+    results = []
+    for symbol, df in data.items():
+        
+        df = calculate_ema9(df)
+        df = calculate_ema50(df)
+
+        ema_9 = df['EMA_9'].iloc[-1] if 'EMA_9' in df.columns else 0
+        ema_50 = df['EMA_50'].iloc[-1] if 'EMA_50' in df.columns else 0
+        current_price = last_prices1(symbol)
+        
+        # Determine pullback buy condition
+        if current_price <= ema_9 and ema_9 > ema_50:
+            
+            df['pullback_buy_action'] = 'Buy'
+        else:
+            df['pullback_buy_action'] = 'Hold'
+        
+        pullback = df['pullback_buy_action'].iloc[-1]
+        # Calculate MACD and identify crossovers
+        price_data = calculate_macd(df)
+        macd_crossover = df['MACD_Crossover'].iloc[-1]  # Get the last crossover signal
+        
+    return df['pullback_buy_action'],df['MACD_Crossover']
+        
 @app.route('/delivery')
 def delivery():
     symbols1 = request.args.get('symbols')
@@ -338,21 +370,11 @@ def delivery():
             
             #current_price = df['CH_LAST_TRADED_PRICE'].iloc[-1] if 'CH_LAST_TRADED_PRICE' in df.columns else 'N/A'
             company_name = df['CH_SYMBOL'].iloc[0] if 'CH_SYMBOL' in df.columns else 'N/A'
-            ####################################
+            ###############################################
                        
-            ema_9 = df['EMA_9'].iloc[-1] if 'EMA_9' in df.columns else 0
-            ema_50 = df['EMA_50'].iloc[-1] if 'EMA_50' in df.columns else 0
             
-            # Determine pullback buy condition
-            if current_price <= ema_9 and ema_9 > ema_50:
-                
-                df['pullback_buy_action'] = 'Buy'
-            else:
-                df['pullback_buy_action'] = 'Hold'
+            df['pullback_buy_action'],df['MACD_Crossover'] = delivery_longdate(symbol)
             
-            # Calculate MACD and identify crossovers
-            price_data = calculate_macd(df)
-            macd_crossover = df['MACD_Crossover'].iloc[-1]  # Get the last crossover signal
             
             ###############################################
             # Prepare indicators data
@@ -532,5 +554,5 @@ def stock_analysis():
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
-    app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True)
+    #app.run(debug=True, host='0.0.0.0', port=80)
