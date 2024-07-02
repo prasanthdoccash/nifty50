@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Analysis</title>
+    <title>Intraday Analysis</title>
     <!-- Include Bootstrap CSS for styling -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     
@@ -12,6 +12,39 @@
             background-color: lightgreen;
         }
     </style>
+    <style>
+        .superbuy-decision {
+            background-color: rgb(83, 179, 235);
+        }
+    </style>
+    <script>
+        
+
+        function downloadCSV() {
+            var csv = [];
+            var rows = document.querySelectorAll("table tr");
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = [], cols = rows[i].querySelectorAll("td, th");
+
+                for (var j = 0; j < cols.length; j++) {
+                    row.push(cols[j].innerText);
+                }
+                
+                csv.push(row.join(","));
+            }
+
+            var csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "stock_analysis.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+        // Call startAutoRefresh on page load
+        
+    </script>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -31,13 +64,21 @@
                     <a class="nav-link" href="/input_symbol">Search</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="/last_prices">NIFTY50 LTP</a>
+                    <a class="nav-link" href="/last_prices">NIFTY50</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/intraday">Intraday</a>
                 </li>
             </ul>
         </div>
     </nav>
+    <p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
+    <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
+
+    
+    <button onclick="downloadCSV()">Download CSV</button><BR><BR><BR>
     <div class="container">
-    <h1>Long Term Stock Analysis</h1>
+    <h1>Nifty50 Intraday Analysis</h1>
     <p>Last Refreshed: {{ last_refreshed }}</p>
     <table border="1">
         <thead>
@@ -48,25 +89,33 @@
                 <th>RSI</th>
                 <th>SMA</th>
                 <th>EMA</th>
+                <th>MACD</th>
                 <th>Bollinger Bands (Upper/Lower)</th>
                 <th>Bid-Ask Spread</th>
                 <th>Turnover Ratio</th>
+                <th>Pull Back</th>
                 <th>Final Decision</th>
             </tr>
         </thead>
         <tbody>
             {% for result in results %}
-            {% if result.decision == 'Buy' %}
-            <tr class="buy-decision">
+            {% if result.decision == 'Buy' and result.indicators_data['pullback_buy_action'] in ['Buy'] %}
+                <tr class="superbuy-decision">
+                {% elif result.decision == 'Buy' and result.indicators_data['MACD_Crossover'] in ['Hold', 'Bullish'] %}
+                <tr class="buy-decision">
+                    
             {% else %}
             <tr>
             {% endif %}
+            
+            
                 <td>{{ result.symbol }}</td>
                 <td>{{ result.LTP }}</td>
                 <td>{{ result.indicators_data['VWAP'] }}</td>
                 <td>{{ result.indicators_data['RSI'] }}</td>
                 <td>{{ result.indicators_data['SMA'] }}</td>
                 <td>{{ result.indicators_data['EMA'] }}</td>
+                <td>{{ result.indicators_data['MACD_Crossover'] }}</td>
                 <td>
                     {% if 'Bollinger Bands' in result.indicators_data %}
                      {{ result.indicators_data['Bollinger Bands'].split(',')[0] | default('N/A') }} 
@@ -77,6 +126,7 @@
                 </td>
                 <td>{{ result.indicators_data['Bid-Ask Spread'] }}</td>
                 <td>{{ result.indicators_data['Turnover Ratio'] }}</td>
+                <td>{{ result.indicators_data['pullback_buy_action'] }}</td>
                 <td>{{ result.decision }}</td>
             </tr>
             {% endfor %}
