@@ -7,14 +7,7 @@
     <!-- Include Bootstrap CSS for styling -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     
-    <style>
-        .bullish {
-            color: rgb(45, 151, 223);
-        }
-        .bearish {
-            color: red;
-        }
-    </style>
+    
     <style>
         .buy-decision {
             background-color: lightgreen;
@@ -118,7 +111,7 @@
         <button onclick="downloadCSV()">Download CSV</button><BR>
 <div class="container">
     <table border="1">
-        <tr>
+        <thead><tr>
             <th>Symbol</th>
             <th>Last Price</th>
             <th>Change</th>
@@ -132,19 +125,21 @@
             <th>Break Buy Action</th>
             <th>Target</th>
             <th>Stop Loss</th>
-            
+          
             
         </tr>
+    </thead> 
+        <tbody>
         {% for data in stock_analysis_data %}
-        {% if data.intra_trade_action == 'Buy' and data.p_change >0.2 and data.break_buy_action == 'Buy' %}
+        {% if data.intra_trade_action == 'Buy' and data.market_sentiment and data.break_buy_action == 'Buy' %}
                 <tr class="superbuy-decision">
-                {% elif data.intra_trade_action == 'Buy' and data.p_change >0.2 %}
+                {% elif data.intra_trade_action == 'Buy' and data.market_sentiment and data.p_change >0.2%}
                 <tr class="buy-decision">
                     
             {% else %}
             <tr>
             {% endif %}
-        <tr>
+        
             <td>{{ data.symbol }}</td>
             <td>{{ data.last_price }}</td>
             <td>{{ data.change }}</td>
@@ -163,6 +158,7 @@
             
         </tr>
         {% endfor %}
+    </tbody>
     </table>
 </div>
 
