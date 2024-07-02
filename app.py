@@ -4,7 +4,7 @@ from jugaad_data.nse import NSELive
 from jugaad_data.nse import stock_df
 import pandas as pd
 from live import final_decision
-import os
+'''import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -14,7 +14,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 
 app = Flask(__name__)
 
@@ -25,7 +25,7 @@ def fetch_intraday_data(symbols, start_date, end_date):
         df = stock_df(symbol=symbol, from_date=start_date, to_date=end_date, series="EQ")
         if not df.empty:
             all_data[symbol] = df
-    print(all_data)
+    
     return all_data
 
 def calculate_vwap(df):
@@ -534,5 +534,5 @@ def stock_analysis():
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
-    app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True)
+    #app.run(debug=True, host='0.0.0.0', port=80)
