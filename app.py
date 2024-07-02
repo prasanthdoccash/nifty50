@@ -527,7 +527,7 @@ def stock_analysis():
             macd_crossover = 'N/A'
             pullback_buy_action = 'N/A'
         
-    return render_template('stock_analysis.html', stock_analysis_data=stock_analysis_data)
+    return render_template('stock_analysis.html', intraday_analysis_data=stock_analysis_data)
     
 
 
