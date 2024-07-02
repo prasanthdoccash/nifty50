@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         .bullish {
-            color: rgb(104, 19, 241);
+            color: rgb(161, 14, 125);
         }
         .bearish {
             color: red;
@@ -94,14 +94,12 @@
                 <li class="nav-item">
                     <a class="nav-link" href="/">Home</a>
                 </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="/delivery">Delivery</a>
-                </li>
+                
                 <li class="nav-item">
                     <a class="nav-link" href="/input_symbol">Search</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="/last_prices">NIFTY50</a>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/delivery">Delivery</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/intraday">Intraday</a>
@@ -129,7 +127,9 @@
             <th>Intraday Low</th>
             <th>Market Sentiment</th>
             <th>Intra Trade Action</th>
+            <th>MACD</th>
             <th>Break Buy Action</th>
+            <th>Pull Back</th>
             <th>Target</th>
             <th>Stop Loss</th>
           
@@ -138,9 +138,9 @@
     </thead> 
         <tbody>
         {% for data in stock_analysis_data %}
-        {% if data.intra_trade_action == 'Buy' and data.market_sentiment and data.break_buy_action == 'Buy' %}
+        {% if data.intra_trade_action == 'Buy' and (data.break_buy_action == 'Buy' or data.macd_crossover =='Bullish' or data.pullback_buy_action =='Buy')  %}
                 <tr class="superbuy-decision">
-                {% elif data.intra_trade_action == 'Buy' and data.market_sentiment and data.p_change >0.2%}
+                {% elif data.intra_trade_action == 'Buy' and data.market_sentiment == 'Bullish' and data.p_change >0.2%}
                 <tr class="buy-decision">
                     
             {% else %}
@@ -157,9 +157,9 @@
             <td>{{ data.intraday_low }}</td>
             <td >{{ data.market_sentiment }}</td>
             <td >{{ data.intra_trade_action }}</td>
-            
+            <td >{{ data.macd_crossover }}</td>
             <td>{{ data.break_buy_action }}</td>
-            
+            <td >{{ data.pullback_buy_action }}</td>
             <td class="{{ 'bullish' if data.intraday_high >= data.target }}">{{ data.target }}</td>
             <td class="{{ 'bearish' if data.intraday_low <= data.stop_loss  }}">{{ data.stop_loss }}</td>
             
