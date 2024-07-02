@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intraday Analysis</title>
+    <!-- Include Bootstrap CSS for styling -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    
+    <style>
+        .bullish {
+            color: rgb(45, 151, 223);
+        }
+        .bearish {
+            color: red;
+        }
+    </style>
+    <style>
+        .buy-decision {
+            background-color: lightgreen;
+        }
+    </style>
+    <style>
+        .superbuy-decision {
+            background-color: rgb(83, 179, 235);
+        }
+    </style>
+    <script>
+        var refreshInterval; // Variable to hold the interval ID
+
+        // Function to start or resume auto-refresh
+        function startAutoRefresh() {
+            refreshInterval = setInterval(function() {
+                location.reload();
+            }, 5000); // 5000 milliseconds = 5 seconds
+            updateRefreshTime(); // Update timestamp immediately on start
+            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
+        }
+
+        // Function to pause auto-refresh
+        function pauseAutoRefresh() {
+            clearInterval(refreshInterval); // Clear the interval
+            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Paused';
+        }
+
+        // Function to update last refreshed date and time
+        function updateRefreshTime() {
+            var now = new Date();
+            var formattedTime = now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+            var formattedDate = now.toLocaleDateString('en-US');
+            var refreshTime = formattedDate + ' ' + formattedTime;
+            document.getElementById('refreshTime').innerText = 'Last Refreshed: ' + refreshTime;
+        }
+        
+        function downloadCSV() {
+            var csv = [];
+            var rows = document.querySelectorAll("table tr");
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = [], cols = rows[i].querySelectorAll("td, th");
+
+                for (var j = 0; j < cols.length; j++) {
+                    row.push(cols[j].innerText);
+                }
+                
+                csv.push(row.join(","));
+            }
+
+            var csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "stock_analysis.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+        // Call startAutoRefresh on page load
+        window.onload = function() {
+            startAutoRefresh();
+        };
+    </script>
+</head>
+<body>
+    
+    <h1>Stock Analysis</h1>
+    
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">MyApp</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/delivery">Delivery</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/input_symbol">Search</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/last_prices">NIFTY50</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/intraday">Intraday</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+<br>
+<p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
+    <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
+
+    <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
+    <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
+        <button onclick="downloadCSV()">Download CSV</button><BR>
+<div class="container">
+    <table border="1">
+        <tr>
+            <th>Symbol</th>
+            <th>Last Price</th>
+            <th>Change</th>
+            <th>% Change</th>
+            <th>Previous Close</th>
+            <th>Open Price</th>
+            <th>Intraday High</th>
+            <th>Intraday Low</th>
+            <th>Market Sentiment</th>
+            <th>Intra Trade Action</th>
+            <th>Break Buy Action</th>
+            <th>Target</th>
+            <th>Stop Loss</th>
+            
+            
+        </tr>
+        {% for data in stock_analysis_data %}
+        {% if data.intra_trade_action == 'Buy' and data.p_change >0.2 and data.break_buy_action == 'Buy' %}
+                <tr class="superbuy-decision">
+                {% elif data.intra_trade_action == 'Buy' and data.p_change >0.2 %}
+                <tr class="buy-decision">
+                    
+            {% else %}
+            <tr>
+            {% endif %}
+        <tr>
+            <td>{{ data.symbol }}</td>
+            <td>{{ data.last_price }}</td>
+            <td>{{ data.change }}</td>
+            <td>{{ data.p_change }}</td>
+            <td>{{ data.previous_close }}</td>
+            <td>{{ data.open_price }}</td>
+            <td>{{ data.intraday_high }}</td>
+            <td>{{ data.intraday_low }}</td>
+            <td class="{{ 'bullish' if data.market_sentiment == 'Bullish' else 'bearish' }}">{{ data.market_sentiment }}</td>
+            <td class="{{ 'bullish' if data.intra_trade_action == 'Buy' else 'bearish' }}">{{ data.intra_trade_action }}</td>
+            
+            <td>{{ data.break_buy_action }}</td>
+            
+            <td>{{ data.target }}</td>
+            <td>{{ data.stop_loss }}</td>
+            
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+</body>
+</html>
