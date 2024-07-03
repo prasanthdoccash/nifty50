@@ -4,6 +4,11 @@ from jugaad_data.nse import NSELive
 from jugaad_data.nse import stock_df
 import pandas as pd
 from live import final_decision
+
+import yfinance as yf
+from datetime import date, timedelta
+import requests
+from lxml import html
 import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
@@ -17,6 +22,54 @@ if os.path.exists(cache_dir):
 os.makedirs(cache_dir)
 
 app = Flask(__name__)
+
+def fetch_vix_data():
+    end = date.today()
+    start = end - timedelta(days=30)
+    vix_data = yf.download("^VIX", start=start, end=end)
+    return vix_data['Close'].iloc[-1]
+
+def fetch_call_put_ratio():
+    # Fetch PCR ratio and volume from the website using XPath
+    url = 'https://www.indiainfoline.com/markets/derivatives/put-call-ratio'
+    response = requests.get(url)
+    tree = html.fromstring(response.content)
+
+    # Define XPaths for PCR ratio and volume
+    xpath_ratio = '/html/body/app-root/div/app-putcall-ratio/div/div[1]/div[1]/div/app-putcall-ratio-detail/div[1]/span/div/div[2]/div/app-fund-overview-put-call-ratio-details-table/div/app-scrollbar/div[2]/table/tbody/tr/td[4]'
+    xpath_volume = '/html/body/app-root/div/app-putcall-ratio/div/div[1]/div[1]/div/app-putcall-ratio-detail/div[1]/span/div/div[2]/div/app-fund-overview-put-call-ratio-details-table/div/app-scrollbar/div[2]/table/tbody/tr/td[7]'
+
+    # Extract PCR ratio and volume
+    ratio_element = tree.xpath(xpath_ratio)
+    volume_element = tree.xpath(xpath_volume)
+
+    if ratio_element and volume_element:
+        pcr_ratio = float(ratio_element[0].text.strip())
+        pcr_volume = float(volume_element[0].text.strip())
+        return pcr_ratio, pcr_volume
+    else:
+        return None, None
+
+def predict_market_sentiment(vix, call_put_ratio,volume):
+    if call_put_ratio < 1 and volume < 1:
+        return "Bullish"
+    elif vix > 20 and call_put_ratio < 1:
+        if volume >1.5:
+            return "Strong Bearish"
+        else:
+            return "Bearish"
+    elif vix < 20 and call_put_ratio > 1:
+        return "Bullish"
+    else:
+        return "Neutral"
+
+
+def marketprediction():
+    vix = fetch_vix_data()
+    call_put_ratio, volume = fetch_call_put_ratio()  # Only fetch PCR ratio, ignore volume for now
+    sentiment = predict_market_sentiment(vix, call_put_ratio,volume)
+   
+    return vix, call_put_ratio, sentiment, volume
 
 def fetch_intraday_data(symbols, start_date, end_date):
     all_data = {}
@@ -232,7 +285,11 @@ def fetch_live_data(symbols):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    vix, call_put_ratio,senti,volume =marketprediction()
+    vix = round(vix,2)
+    return render_template('index.html',vix= vix,
+                call_put_ratio= call_put_ratio,
+                senti= senti,volume=volume)
 
 
 
@@ -352,6 +409,10 @@ def delivery():
     data = fetch_intraday_data(symbols, start_date, end_date)
     
     results = []
+
+    vix, call_put_ratio,senti,volume =marketprediction()
+    vix = round(vix,2)
+
     for symbol, df in data.items():
         try:
             df = calculate_vwap(df)
@@ -394,6 +455,8 @@ def delivery():
             # Determine sentiment for each indicator
             sentiment = determine_sentiment(df)
             
+            
+            
             # Determine final decision based on sentiment
             decision = final_decision(sentiment)
             
@@ -404,7 +467,8 @@ def delivery():
                 'LTP': current_price,
                 'indicators_data': indicators_data,
                 'sentiment': sentiment,
-                'decision': decision
+                'decision': decision,
+                
             }
             
             results.append(symbol_data)  
@@ -412,7 +476,9 @@ def delivery():
         except KeyError as e:
             print(f"KeyError: {str(e)}. Skipping symbol {symbol}.")
             continue
-    return render_template('delivery_analysis.html', results=results, last_refreshed=last_refreshed)
+    return render_template('delivery_analysis.html', results=results, last_refreshed=last_refreshed,vix= vix,
+                call_put_ratio= call_put_ratio,
+                senti= senti,volume=volume)
 
 # Global variable to store today's high at a specific time
 todays_high_at_specific_time = 0
@@ -468,6 +534,8 @@ def stock_analysis():
     symbols1 = request.args.get('symbols')
     symbols = symbols1.split(',') if symbols1 else predefined_symbols
     
+    vix, call_put_ratio,senti,volume =marketprediction()
+    vix = round(vix,2)
     stock_analysis_data = []
     
     for symbol in symbols:
@@ -529,7 +597,9 @@ def stock_analysis():
             macd_crossover = 'N/A'
             pullback_buy_action = 'N/A'
         
-    return render_template('intraday_analysis.html', stock_analysis_data=stock_analysis_data)
+    return render_template('intraday_analysis.html', stock_analysis_data=stock_analysis_data,vix= vix,
+                call_put_ratio= call_put_ratio,
+                senti= senti,volume=volume)
     
 
 
