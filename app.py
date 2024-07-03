@@ -4,11 +4,9 @@ from jugaad_data.nse import NSELive
 from jugaad_data.nse import stock_df
 import pandas as pd
 from live import final_decision
-import yfinance as yf
 import nse_predict
 from datetime import date, timedelta
-import requests
-from lxml import html
+
 import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
