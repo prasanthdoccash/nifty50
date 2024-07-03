@@ -73,18 +73,7 @@
             </ul>
         </div>
     </nav>
-    <div class="container">
-        <h5>Market Sentiment: <span><b><td class="{{ 'bullish' if senti == 'Bullish' }}">{{ senti }}</b></td></span></h5>
-        <div class="result">
-            <table>
-                <tr>
-            <td>VIX: <span>{{ vix if vix is not none else "Data not available" }}</span><br></td>
-            <td>Volume: <span>{{ volume if volume is not none else "Data not available" }}</span><br></td>
-            <td>Call/Put Ratio: <span>{{ call_put_ratio if call_put_ratio is not none else "Data not available" }}</span><br></td>
-        </tr>
-        </table>
-        </div>
-    </div>
+    
 
     <div class="container mt-4">
         <h1>NIFTY50</h1>
