@@ -5,6 +5,7 @@ from jugaad_data.nse import stock_df
 import pandas as pd
 from live import final_decision
 import yfinance as yf
+import nse_predict
 from datetime import date, timedelta
 import requests
 from lxml import html
@@ -237,7 +238,8 @@ def fetch_live_data(symbols):
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    senti = nse_predict.predict_nifty()
+    return render_template('index.html',senti=senti)
 
 
 @app.route('/last_prices')
