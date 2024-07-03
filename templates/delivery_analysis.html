@@ -76,19 +76,7 @@
             </ul>
         </div>
     </nav>
-    <div class="container">
-        <h5>Market Sentiment: <span><b>{{ senti }}</b></span></h5>
-        <div class="result">
-            <table>
-                <tr>
-            <td>VIX: <span>{{ vix if vix is not none else "Data not available" }}</span><br></td>
-            <td>Volume: <span>{{ volume if volume is not none else "Data not available" }}</span><br></td>
-            <td>Call/Put Ratio: <span>{{ call_put_ratio if call_put_ratio is not none else "Data not available" }}</span><br></td>
-        </tr>
-        </table>
-            
-        </div>
-    </div>
+    
 
     <p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
     <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
