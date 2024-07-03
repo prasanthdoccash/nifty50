@@ -233,7 +233,6 @@ def fetch_live_data(symbols):
 
 @app.route('/')
 def home():
-    
     return render_template('index.html')
 
 
