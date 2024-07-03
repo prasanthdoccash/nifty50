@@ -14,7 +14,12 @@
             color: red;
         }
     </style>
-    
+    <style>
+        /* Add space between <td> elements */
+        td {
+            padding-right: 20px; /* Adjust as needed */
+        }
+    </style>
     <style>
         .buy-decision {
             background-color: lightgreen;
@@ -32,7 +37,7 @@
         function startAutoRefresh() {
             refreshInterval = setInterval(function() {
                 location.reload();
-            }, 5000); // 5000 milliseconds = 5 seconds
+            }, 10000); // 5000 milliseconds = 5 seconds
             updateRefreshTime(); // Update timestamp immediately on start
             document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
         }
@@ -107,13 +112,26 @@
             </ul>
         </div>
     </nav>
+    <div class="container">
+        <h5>Market Sentiment: <span><b><td class="{{ 'bullish' if senti == 'Bullish' }}">{{ senti }}</b></td></span></h5>
+        <div class="result">
+            <table>
+                <tr>
+            <td>VIX: <span>{{ vix if vix is not none else "Data not available" }}</span><br></td>
+            <td>Volume: <span>{{ volume if volume is not none else "Data not available" }}</span><br></td>
+            <td>Call/Put Ratio: <span>{{ call_put_ratio if call_put_ratio is not none else "Data not available" }}</span><br></td>
+        </tr>
+        </table>
+        </div>
+    </div>
 <br>
+<div class="container">
 <p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
     <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
 
     <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
     <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
-        <button onclick="downloadCSV()">Download CSV</button><BR>
+        <button onclick="downloadCSV()">Download CSV</button><br></div>
 <div class="container">
     <table border="1">
         <thead><tr>
