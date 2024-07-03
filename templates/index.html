@@ -7,6 +7,15 @@
     <!-- Include Bootstrap CSS for styling -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
+        .bullish {
+            color: rgb(10, 226, 57);
+        }
+        .bearish {
+            color: red;
+        }
+    </style>
+    <style>
+        
         body, html {
             margin: 0;
             padding: 0;
@@ -34,6 +43,12 @@
             margin: 0;
         }
     </style>
+    <style>
+        /* Add space between <td> elements */
+        td {
+            padding-right: 20px; /* Adjust as needed */
+        }
+    </style>
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -58,6 +73,19 @@
             </ul>
         </div>
     </nav>
+    <div class="container">
+        <h5>Market Sentiment: <span><b><td class="{{ 'bullish' if senti == 'Bullish' }}">{{ senti }}</b></td></span></h5>
+        <div class="result">
+            <table>
+                <tr>
+            <td>VIX: <span>{{ vix if vix is not none else "Data not available" }}</span><br></td>
+            <td>Volume: <span>{{ volume if volume is not none else "Data not available" }}</span><br></td>
+            <td>Call/Put Ratio: <span>{{ call_put_ratio if call_put_ratio is not none else "Data not available" }}</span><br></td>
+        </tr>
+        </table>
+        </div>
+    </div>
+
     <div class="container mt-4">
         <h1>NIFTY50</h1>
         <div class="row">
