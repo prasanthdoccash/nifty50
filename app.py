@@ -7,7 +7,7 @@ from live import final_decision
 import ADX
 from datetime import date, timedelta
 
-'''import os
+import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -17,7 +17,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)'''
+os.makedirs(cache_dir)
 
 app = Flask(__name__)
 
@@ -708,6 +708,6 @@ def intraday_stock():
     return render_template('intraday_analysis.html', stock_analysis_data=stock_analysis_data)
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
     
-    #app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True, host='0.0.0.0', port=80)
