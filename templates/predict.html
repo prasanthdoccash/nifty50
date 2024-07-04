@@ -31,22 +31,9 @@
         }
     </style>
     <script>
-        var refreshInterval; // Variable to hold the interval ID
+        
 
-        // Function to start or resume auto-refresh
-        function startAutoRefresh() {
-            refreshInterval = setInterval(function() {
-                location.reload();
-            }, 10000); // 5000 milliseconds = 5 seconds
-            updateRefreshTime(); // Update timestamp immediately on start
-            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
-        }
-
-        // Function to pause auto-refresh
-        function pauseAutoRefresh() {
-            clearInterval(refreshInterval); // Clear the interval
-            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Paused';
-        }
+        
 
         // Function to update last refreshed date and time
         function updateRefreshTime() {
@@ -79,10 +66,7 @@
             document.body.appendChild(link);
             link.click();
         }
-        // Call startAutoRefresh on page load
-        window.onload = function() {
-            startAutoRefresh();
-        };
+       
     </script>
 </head>
 <body>
@@ -115,11 +99,10 @@
     
 <br>
 <div class="container">
-<p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
+
     <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
 
-    <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
-    <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
+    
         <button onclick="downloadCSV()">Download CSV</button><br></div>
 <div class="container">
     <table border="1">
@@ -127,7 +110,8 @@
             <th>Symbol</th>
                 <th>Category</th>
                 <th>LTP</th>
-                
+                <th>VWAP (Intraday)</th>
+                <th>RSI (Intraday)</th>
           
             
         </tr>
@@ -138,7 +122,8 @@
                 <td>{{ item.symbol }}</td>
                 <td>{{ item.category }}</td>
                 <td>{{ item.LTP }}</td>
-                
+                <td>{{ item.VWAP }}</td>
+                <td>{{ item.RSI }}</td>
         
         </tr>
         {% endfor %}
