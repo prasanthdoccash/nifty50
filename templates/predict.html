@@ -108,10 +108,10 @@
     <table border="1">
         <thead><tr>
             <th>Symbol</th>
-                <th>Category</th>
+                <th>Category (Del)</th>
                 <th>LTP</th>
-                <th>VWAP (Intraday)</th>
-                <th>RSI (Intraday)</th>
+                <th>ADX</th>
+                <th>RSI (Del)</th>
           
             
         </tr>
@@ -122,8 +122,8 @@
                 <td>{{ item.symbol }}</td>
                 <td>{{ item.category }}</td>
                 <td>{{ item.LTP }}</td>
-                <td>{{ item.VWAP }}</td>
-                <td>{{ item.RSI }}</td>
+                <td>{{ item.indicators_data['adx'] }}</td>
+                <td>{{ item.indicators_data['RSI'] }}</td>
         
         </tr>
         {% endfor %}
