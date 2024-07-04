@@ -6,7 +6,7 @@ import pandas as pd
 from live import final_decision
 from datetime import date, timedelta
 
-import os
+'''import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -16,7 +16,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 
 app = Flask(__name__)
 
@@ -200,14 +200,32 @@ def final_decision(sentiment):
     else:
         return "Hold"
 # Dummy symbols data for demonstration
-predefined_symbols = ["ADANIENT","ADANIPORTS", "APOLLOHOSP","ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "BAJAJFINSV",
-    "BAJFINANCE", "BHARTIARTL", "BPCL", "CIPLA", "COALINDIA", "DIVISLAB",
-    "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH","HDFCBANK",
-    "HDFCLIFE", "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK",
-    "INDUSINDBK", "INFY", "IOC", "ITC", "JSWSTEEL", "KOTAKBANK", "LTIM","LT",
-    "M&M", "MARUTI", "NESTLEIND", "NTPC", "ONGC", "POWERGRID", "RELIANCE",
-    "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATAMOTORS", "TATASTEEL",
-    "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"]
+predefined_symbols = ["ABB", "ACC", "AUBANK", "AARTIIND", "ABBOTINDIA", "ADANIENT", "ADANIPORTS", 
+                       "ABCAPITAL", "ABFRL", "ALKEM", "AMBUJACEM", "APOLLOHOSP", "APOLLOTYRE", 
+                       "ASHOKLEY", "ASIANPAINT", "ASTRAL", "ATUL", "AUROPHARMA", "AXISBANK", "BSOFT", 
+                       "BAJAJ-AUTO", "BAJFINANCE", "BAJAJFINSV", "BALKRISIND", "BALRAMCHIN", 
+                       "BANDHANBNK", "BANKBARODA", "BATAINDIA", "BERGEPAINT", "BEL", "BHARATFORG", 
+                       "BHEL", "BPCL", "BHARTIARTL", "BIOCON", "BOSCHLTD", "BRITANNIA", "CANFINHOME", 
+                       "CANBK", "CHAMBLFERT", "CHOLAFIN", "CIPLA", "CUB", "COALINDIA", "COFORGE", 
+                       "COLPAL", "CONCOR", "COROMANDEL", "CROMPTON", "CUMMINSIND", "DLF", "DABUR", 
+                       "DALBHARAT", "DEEPAKNTR", "DIVISLAB", "DIXON", "LALPATHLAB", "DRREDDY", 
+                       "EICHERMOT", "ESCORTS", "EXIDEIND", "GAIL", "GMRINFRA", "GLENMARK", "GODREJCP", 
+                       "GODREJPROP", "GRANULES", "GRASIM", "GUJGASLTD", "GNFC", "HCLTECH", "HDFCAMC", 
+                       "HDFCBANK", "HDFCLIFE", "HAVELLS", "HEROMOTOCO", "HINDALCO", "HAL", "HINDCOPPER", 
+                       "HINDPETRO", "HINDUNILVR", "ICICIBANK", "ICICIGI", "ICICIPRULI", "IDFCFIRSTB", 
+                       "IDFC", "IPCALAB", "ITC", "INDIAMART", "IEX", "IOC", "IRCTC", "IGL", "INDUSTOWER", 
+                       "INDUSINDBK", "NAUKRI", "INFY", "INDIGO", "JKCEMENT", "JSWSTEEL", "JINDALSTEL", 
+                       "JUBLFOOD", "KOTAKBANK", "LTF", "LTTS", "LICHSGFIN", "LTIM", "LT", "LAURUSLABS", 
+                       "LUPIN", "MRF", "MGL", "M&MFIN", "M&M", "MANAPPURAM", "MARICO", "MARUTI", "MFSL", 
+                       "METROPOLIS", "MPHASIS", "MCX", "MUTHOOTFIN", "NMDC", "NTPC", "NATIONALUM", 
+                       "NAVINFLUOR", "NESTLEIND", "OBEROIRLTY", "ONGC", "OFSS", "PIIND", "PVRINOX", 
+                       "PAGEIND", "PERSISTENT", "PETRONET", "PIDILITIND", "PEL", "POLYCAB", "PFC", 
+                       "POWERGRID", "PNB", "RBLBANK", "RECLTD", "RELIANCE", "SBICARD", "SBILIFE", 
+                       "SHREECEM", "SRF", "MOTHERSON", "SHRIRAMFIN", "SIEMENS", "SBIN", "SAIL", 
+                       "SUNPHARMA", "SUNTV", "SYNGENE", "TATACONSUM", "TVSMOTOR", "TATACHEM", "TATACOMM", 
+                       "TCS", "TATAMOTORS", "TATAPOWER", "TATASTEEL", "TECHM", "FEDERALBNK", "INDIACEM", 
+                       "INDHOTEL", "RAMCOCEM", "TITAN", "TORNTPHARM", "TRENT", "UPL", "ULTRACEMCO", "UBL",
+                         "UNITDSPR", "VEDL", "IDEA", "VOLTAS", "WIPRO", "ZYDUSLIFE"]
 predefined_symbols1 = [
     "ADANIENT","ADANIPORTS", "APOLLOHOSP","ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "BAJAJFINSV",
     "BAJFINANCE", "BHARTIARTL", "BPCL", "CIPLA", "COALINDIA", "DIVISLAB",
@@ -218,6 +236,38 @@ predefined_symbols1 = [
     "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATAMOTORS", "TATASTEEL",
     "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
 ]
+
+#EQ Derivatives symbols
+'''predefined_symbols = [
+"ABB", "ACC", "AUBANK", "AARTIIND", "ABBOTINDIA", "ADANIENT", "ADANIPORTS", 
+                       "ABCAPITAL", "ABFRL", "ALKEM", "AMBUJACEM", "APOLLOHOSP", "APOLLOTYRE", 
+                       "ASHOKLEY", "ASIANPAINT", "ASTRAL", "ATUL", "AUROPHARMA", "AXISBANK", "BSOFT", 
+                       "BAJAJ-AUTO", "BAJFINANCE", "BAJAJFINSV", "BALKRISIND", "BALRAMCHIN", 
+                       "BANDHANBNK", "BANKBARODA", "BATAINDIA", "BERGEPAINT", "BEL", "BHARATFORG", 
+                       "BHEL", "BPCL", "BHARTIARTL", "BIOCON", "BOSCHLTD", "BRITANNIA", "CANFINHOME", 
+                       "CANBK", "CHAMBLFERT", "CHOLAFIN", "CIPLA", "CUB", "COALINDIA", "COFORGE", 
+                       "COLPAL", "CONCOR", "COROMANDEL", "CROMPTON", "CUMMINSIND", "DLF", "DABUR", 
+                       "DALBHARAT", "DEEPAKNTR", "DIVISLAB", "DIXON", "LALPATHLAB", "DRREDDY", 
+                       "EICHERMOT", "ESCORTS", "EXIDEIND", "GAIL", "GMRINFRA", "GLENMARK", "GODREJCP", 
+                       "GODREJPROP", "GRANULES", "GRASIM", "GUJGASLTD", "GNFC", "HCLTECH", "HDFCAMC", 
+                       "HDFCBANK", "HDFCLIFE", "HAVELLS", "HEROMOTOCO", "HINDALCO", "HAL", "HINDCOPPER", 
+                       "HINDPETRO", "HINDUNILVR", "ICICIBANK", "ICICIGI", "ICICIPRULI", "IDFCFIRSTB", 
+                       "IDFC", "IPCALAB", "ITC", "INDIAMART", "IEX", "IOC", "IRCTC", "IGL", "INDUSTOWER", 
+                       "INDUSINDBK", "NAUKRI", "INFY", "INDIGO", "JKCEMENT", "JSWSTEEL", "JINDALSTEL", 
+                       "JUBLFOOD", "KOTAKBANK", "LTF", "LTTS", "LICHSGFIN", "LTIM", "LT", "LAURUSLABS", 
+                       "LUPIN", "MRF", "MGL", "M&MFIN", "M&M", "MANAPPURAM", "MARICO", "MARUTI", "MFSL", 
+                       "METROPOLIS", "MPHASIS", "MCX", "MUTHOOTFIN", "NMDC", "NTPC", "NATIONALUM", 
+                       "NAVINFLUOR", "NESTLEIND", "OBEROIRLTY", "ONGC", "OFSS", "PIIND", "PVRINOX", 
+                       "PAGEIND", "PERSISTENT", "PETRONET", "PIDILITIND", "PEL", "POLYCAB", "PFC", 
+                       "POWERGRID", "PNB", "RBLBANK", "RECLTD", "RELIANCE", "SBICARD", "SBILIFE", 
+                       "SHREECEM", "SRF", "MOTHERSON", "SHRIRAMFIN", "SIEMENS", "SBIN", "SAIL", 
+                       "SUNPHARMA", "SUNTV", "SYNGENE", "TATACONSUM", "TVSMOTOR", "TATACHEM", "TATACOMM", 
+                       "TCS", "TATAMOTORS", "TATAPOWER", "TATASTEEL", "TECHM", "FEDERALBNK", "INDIACEM", 
+                       "INDHOTEL", "RAMCOCEM", "TITAN", "TORNTPHARM", "TRENT", "UPL", "ULTRACEMCO", "UBL",
+                         "UNITDSPR", "VEDL", "IDEA", "VOLTAS", "WIPRO", "ZYDUSLIFE"
+                         ]'''
+
+
 
 nse = NSELive()
 
@@ -236,6 +286,112 @@ def fetch_live_data(symbols):
 @app.route('/')
 def home():
     return render_template('index.html')
+
+@app.route('/final')
+def final():
+
+    stock_analysis_data = stock_analysis() # getting intraday data
+    
+    categorized_results_intra = []
+    for prediction in stock_analysis_data:
+        intra_trade_action = prediction['intra_trade_action']
+        break_buy_action = prediction['break_buy_action']
+        macd_crossover = prediction['macd_crossover']
+        pullback_buy_action = prediction['pullback_buy_action']
+        market_sentiment = prediction['market_sentiment']
+        p_change = prediction['p_change']
+
+        category = ''
+
+        if (intra_trade_action == 'Buy' and 
+            (break_buy_action == 'Buy' or 
+             macd_crossover == 'Bullish' or 
+             pullback_buy_action == 'Buy')):
+            category = 'Super Bullish'
+        elif (intra_trade_action == 'Buy' and 
+              market_sentiment == 'Bullish' and 
+              p_change > 0.2):
+            category = 'Bullish'
+        else:
+            category = 'Other'
+
+        categorized_results_intra.append({
+            'symbol': prediction['symbol'],
+            'last_price': prediction['last_price'],
+            'category': category,
+            'intra_trade_action': intra_trade_action,
+            'break_buy_action': break_buy_action,
+            'macd_crossover': macd_crossover,
+            'pullback_buy_action': pullback_buy_action,
+            'market_sentiment': market_sentiment,
+            'p_change': p_change
+        })
+
+    
+    results,last_refreshed = delivery() # getting delivery data
+    categorized_results_del = []
+    for stock in results:
+        decision = stock['decision']
+        indicators_data = stock['indicators_data']
+        category = ''
+
+        if decision == 'Buy' and (indicators_data['pullback_buy_action'] in ['Buy'] or indicators_data['MACD_Crossover'] == 'Bullish'):
+            category = 'Super Bullish'
+        elif decision == 'Buy' and indicators_data['MACD_Crossover'] in ['Hold', 'Bullish']:
+            category = 'Bullish'
+        else:
+            category = decision
+       
+        categorized_results_del.append({
+            'symbol': stock['symbol'],
+            'LTP': stock['LTP'],
+            'category': category,
+            'indicators_data': indicators_data,
+            'sentiment': stock['sentiment']
+        })
+    
+    super_bullish_delivery = set()
+    bullish_delivery = set()
+    super_bullish_intraday = set()
+    bullish_intraday = set()
+
+    # Categorize symbols from delivery data
+    for item in categorized_results_del:
+        symbol = item['symbol']
+        if item['category'] == 'Super Bullish':
+            super_bullish_delivery.add(symbol)
+        elif item['category'] == 'Bullish':
+            bullish_delivery.add(symbol)
+
+    # Categorize symbols from intraday data
+    for item in categorized_results_intra:
+        symbol = item['symbol']
+        if item['category'] == 'Super Bullish':
+            super_bullish_intraday.add(symbol)
+        elif item['category'] == 'Bullish':
+            bullish_intraday.add(symbol)
+    
+    # Determine symbols to display based on intersection criteria
+    symbols_to_display = (
+        super_bullish_delivery.intersection(super_bullish_intraday) |
+        super_bullish_delivery.intersection(bullish_intraday) |
+        bullish_delivery.intersection(super_bullish_intraday) |
+        bullish_delivery.intersection(bullish_intraday)
+    )
+    
+    data_to_display = []
+    for item in categorized_results_del:
+        if item['symbol'] in symbols_to_display:
+            data_to_display.append({
+            'symbol': item['symbol'],
+            'category': item['category'],
+                'LTP': item['LTP']
+            # Add more fields as needed
+        })
+        print(data_to_display)
+    #return categorized_results_del
+    return render_template('predict.html', data=data_to_display)
+    
 
 
 @app.route('/last_prices')
@@ -326,7 +482,9 @@ def delivery_longdate(symbol):
         current_price = last_prices1(symbol)
         
         # Determine pullback buy condition
-        if current_price <= ema_9 and ema_9 > ema_50:
+        if ema_9 or ema_50 == None:
+            df['pullback_buy_action'] = 'Hold'
+        elif current_price <= ema_9 and ema_9 > ema_50:
             
             df['pullback_buy_action'] = 'Buy'
         else:
@@ -339,7 +497,8 @@ def delivery_longdate(symbol):
         
     #return df['pullback_buy_action'],df['MACD_Crossover']
     return pullback, macd_crossover
-@app.route('/delivery')
+
+#@app.route('/delivery')
 def delivery():
     symbols1 = request.args.get('symbols')
     symbols = symbols1.split(',') if symbols1 else predefined_symbols
@@ -418,7 +577,15 @@ def delivery():
         except KeyError as e:
             print(f"KeyError: {str(e)}. Skipping symbol {symbol}.")
             continue
+    return results,last_refreshed
+    
+    
+@app.route('/delivery')
+def delivery1():
+    results,last_refreshed = delivery()
     return render_template('delivery_analysis.html', results=results, last_refreshed=last_refreshed)
+
+
 
 # Global variable to store today's high at a specific time
 todays_high_at_specific_time = 0
@@ -467,9 +634,10 @@ def intraday_high_low(intra_day_data, last_price,open_price):
     return intraday_high, intraday_low, intra_trade_action, break_buy_action, stop_loss,target
 
 # Route to fetch stock data and render HTML template
-@app.route('/intraday')
+#@app.route('/intraday')
 def stock_analysis():
     global todays_high_at_specific_time  # Access the global variable
+    #global final_intra
     #symbols = predefined_symbols  # Example symbol for demonstration
     symbols1 = request.args.get('symbols')
     symbols = symbols1.split(',') if symbols1 else predefined_symbols
@@ -534,12 +702,16 @@ def stock_analysis():
             target = 'N/A'
             macd_crossover = 'N/A'
             pullback_buy_action = 'N/A'
-        
-    return render_template('intraday_analysis.html', stock_analysis_data=stock_analysis_data)
     
+    return stock_analysis_data
+    #return render_template('intraday_analysis.html', stock_analysis_data=stock_analysis_data)
 
+@app.route('/intraday')
+def intraday_stock():
+    stock_analysis_data = stock_analysis()
+    return render_template('intraday_analysis.html', stock_analysis_data=stock_analysis_data)
 
 if __name__ == "__main__":
-    #app.run(debug=True)
+    app.run(debug=True)
     
-    app.run(debug=True, host='0.0.0.0', port=80)
+    #app.run(debug=True, host='0.0.0.0', port=80)
