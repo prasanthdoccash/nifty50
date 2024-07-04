@@ -99,6 +99,7 @@
                 <th>Bid-Ask Spread</th>
                 <th>Turnover Ratio</th>
                 <th>Pull Back</th>
+                <th>ADX</th>
                 <th>Final Decision</th>
             </tr>
         </thead>
@@ -132,6 +133,7 @@
                 <td>{{ result.indicators_data['Bid-Ask Spread'] }}</td>
                 <td>{{ result.indicators_data['Turnover Ratio'] }}</td>
                 <td>{{ result.indicators_data['pullback_buy_action'] }}</td>
+                <td>{{ result.indicators_data['adx'] }}</td>
                 <td>{{ result.decision }}</td>
             </tr>
             {% endfor %}
