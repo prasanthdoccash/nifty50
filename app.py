@@ -287,7 +287,7 @@ def fetch_live_data(symbols):
 def home():
     return render_template('index.html')
 
-@app.route('/final')
+@app.route('/predict')
 def final():
 
     stock_analysis_data = stock_analysis() # getting intraday data
