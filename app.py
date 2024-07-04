@@ -4,6 +4,7 @@ from jugaad_data.nse import NSELive
 from jugaad_data.nse import stock_df
 import pandas as pd
 from live import final_decision
+import ADX
 from datetime import date, timedelta
 
 import os
@@ -333,11 +334,20 @@ def final():
     for stock in results:
         decision = stock['decision']
         indicators_data = stock['indicators_data']
+        
         category = ''
-
-        if decision == 'Buy' and (indicators_data['pullback_buy_action'] in ['Buy'] or indicators_data['MACD_Crossover'] == 'Bullish'):
+        if indicators_data['adx'] == 'Strong uptrend':
+            indicators_data['adx'] = 'Strong uptrend'
+        elif indicators_data['adx'] == 'Indeterminate':
+            indicators_data['adx'] = 'Indeterminate'
+        elif indicators_data['adx'] == 'Strong downtrend':
+            indicators_data['adx'] = 'Strong downtrend'
+        else:
+            indicators_data['adx'] = 'None'
+        #print(indicators_data['adx'])
+        if (decision == 'Buy' or indicators_data['adx'] in ['Strong uptrend']) or (decision == 'Buy' and indicators_data['adx'] in ['Indeterminate']) and (indicators_data['pullback_buy_action'] in ['Buy'] or indicators_data['MACD_Crossover'] == 'Bullish'):
             category = 'Super Bullish'
-        elif decision == 'Buy' and indicators_data['MACD_Crossover'] in ['Hold', 'Bullish']:
+        elif decision == 'Buy' and indicators_data['MACD_Crossover'] in ['Hold', 'Bullish'] and indicators_data['adx'] in ['Indeterminate','Strong uptrend','None']:
             category = 'Bullish'
         else:
             category = decision
@@ -388,7 +398,7 @@ def final():
                 'LTP': item['LTP']
             # Add more fields as needed
         })
-        print(data_to_display)
+        
     #return categorized_results_del
     return render_template('predict.html', data=data_to_display)
     
@@ -527,6 +537,7 @@ def delivery():
             df = calculate_turnover_ratio(df)
             
             current_price = last_prices1(symbol)
+            df['adx'] = ADX.display_trends(symbol,start_date, end_date)
             
             #current_price = df['CH_LAST_TRADED_PRICE'].iloc[-1] if 'CH_LAST_TRADED_PRICE' in df.columns else 'N/A'
             #company_name = df['CH_SYMBOL'].iloc[0] if 'CH_SYMBOL' in df.columns else 'N/A'
@@ -537,6 +548,8 @@ def delivery():
             indicators_data = {}
             if 'VWAP' in df.columns:
                 indicators_data['VWAP'] = round(df['VWAP'].iloc[-1], 2)
+            if 'adx' in df.columns:
+                indicators_data['adx'] = df['adx'].iloc[-1]
             if 'RSI' in df.columns:
                 indicators_data['RSI'] = round(df['RSI'].iloc[-1],2)
             if 'SMA' in df.columns:
