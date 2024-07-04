@@ -3,3 +3,5 @@ Werkzeug==2.0.3
 pandas
 jugaad_data
 datetime
+yfinance
+ta
