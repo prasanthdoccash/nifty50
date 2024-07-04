@@ -56,7 +56,42 @@
             var refreshTime = formattedDate + ' ' + formattedTime;
             document.getElementById('refreshTime').innerText = 'Last Refreshed: ' + refreshTime;
         }
-        
+        / Retrieve previousActions from sessionStorage or initialize if it doesn't exist
+var previousActions = JSON.parse(sessionStorage.getItem('previousActions')) || {};
+
+function checkAlerts() {
+    var rows = document.querySelectorAll("table tbody tr");
+    rows.forEach(row => {
+        var cells = row.querySelectorAll("td");
+
+        // Ensure cells exist and have the necessary data
+        if (cells.length >= 15) { // Adjust based on your table structure
+            var symbol = cells[0].innerText.trim(); // Symbol column
+            var intraTradeAction = cells[9].innerText.trim(); // Intra Trade Action column
+            var lastPrice = parseFloat(cells[1].innerText.trim()); // Last Price column
+            var target = parseFloat(cells[13].innerText.trim()); // Target column
+            var stopLoss = parseFloat(cells[14].innerText.trim()); // Stop Loss column
+
+            // Check if previous action exists for this symbol and is different
+            if (!previousActions.hasOwnProperty(symbol) || previousActions[symbol] !== intraTradeAction) {
+                if (previousActions[symbol]) {
+                    var message = symbol + ": Intra trade action changed from " + previousActions[symbol] + " to " + intraTradeAction + ".\nLast Price: " + lastPrice + "\nTarget: " + target + "\nStop Loss: " + stopLoss;
+                } else {
+                    var message = symbol + ": Initial Intra trade action is " + intraTradeAction + ".\nLast Price: " + lastPrice + "\nTarget: " + target + "\nStop Loss: " + stopLoss;
+                }
+                alert(message);
+                console.log("Alert triggered for Symbol", symbol + ":", message);
+            }
+
+            // Update previous action for this symbol
+            previousActions[symbol] = intraTradeAction;
+            console.log("Updated Previous Action for Symbol", symbol + ":", intraTradeAction);
+        }
+    });
+
+    // Store updated previousActions in sessionStorage
+    sessionStorage.setItem('previousActions', JSON.stringify(previousActions));
+}
         function downloadCSV() {
             var csv = [];
             var rows = document.querySelectorAll("table tr");
@@ -82,6 +117,7 @@
         // Call startAutoRefresh on page load
         window.onload = function() {
             startAutoRefresh();
+            checkAlerts();
         };
     </script>
 </head>
