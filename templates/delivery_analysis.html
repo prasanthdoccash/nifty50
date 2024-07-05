@@ -30,7 +30,7 @@
 function startAutoRefresh() {
     refreshInterval = setInterval(function() {
         location.reload();
-    }, 180000); // 5000 milliseconds = 5 seconds
+    }, 10000); // 5000 milliseconds = 5 seconds
     updateRefreshTime(); // Update timestamp immediately on start
     document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
 }
@@ -74,58 +74,64 @@ function updateRefreshTime() {
             link.click();
         }
         var previousActions = JSON.parse(sessionStorage.getItem('previousActions')) || {};
-        var previousActionsM = JSON.parse(sessionStorage.getItem('previousActionsM')) || {};
-        var previousActionsMACD = JSON.parse(sessionStorage.getItem('previousActionsMACD')) || {};
+var previousActionsM = JSON.parse(sessionStorage.getItem('previousActionsM')) || {};
+var previousActionsMACD = JSON.parse(sessionStorage.getItem('previousActionsMACD')) || {};
 
-        function checkAlerts() {
-            var rows = document.querySelectorAll("table tbody tr");
-            rows.forEach(row => {
-                var cells = row.querySelectorAll("td");
+function checkAlerts() {
+    var rows = document.querySelectorAll("table tbody tr");
+    rows.forEach(row => {
+        var cells = row.querySelectorAll("td");
 
-                // Ensure cells exist and have the necessary data
-                if (cells.length >= 13) { // Adjust based on your table structure
-                    var symbol = cells[0].innerText.trim(); // Symbol column
-                    var RSIAction = cells[3].innerText.trim(); // RSI column
-                    var DecisionAction = cells[12].innerText.trim(); // Final Decision column
-                    var MACDAction = cells[6].innerText.trim(); // MACD Action column
+        // Ensure cells exist and have the necessary data
+        if (cells.length >= 13) { // Adjust based on your table structure
+            var symbol = cells[0].innerText.trim(); // Symbol column
+            var RSIAction = cells[3].innerText.trim(); // RSI column
+            var DecisionAction = cells[12].innerText.trim(); // Final Decision column
+            var MACDAction = cells[6].innerText.trim(); // MACD Action column
 
-                    // Check if previous action exists for this symbol and if it's different
-                    if ((previousActions.hasOwnProperty(symbol) && previousActions[symbol] !== RSIAction) || 
-                        (previousActionsM.hasOwnProperty(symbol) && previousActionsM[symbol] !== DecisionAction) || 
-                        (previousActionsMACD.hasOwnProperty(symbol) && previousActionsMACD[symbol] !== MACDAction)) {
-                        
-                        var message = symbol + ": ";
-                        
-                        // Check for changes in RSI Action
-                        if (previousActions.hasOwnProperty(symbol) && previousActions[symbol] !== RSIAction) {
-                            message += "RSI changed from " + previousActions[symbol] + " to " + RSIAction + ".\n";
-                        }
-                        
-                        // Check for changes in Final Decision Action
-                        if (previousActionsM.hasOwnProperty(symbol) && previousActionsM[symbol] !== DecisionAction) {
-                            message += "Decision changed from " + previousActionsM[symbol] + " to " + DecisionAction + ".\n";
-                        }
-                        // Check for changes in MACD Action
-                        if (previousActionsMACD.hasOwnProperty(symbol) && previousActionsMACD[symbol] !== MACDAction) {
-                            message += "MACD changed from " + previousActionsMACD[symbol] + " to " + MACDAction + ".\n";
-                        }
-                        
-                        alert(message);
-                        console.log("Alert triggered for Symbol", symbol + ":", message);
-                    }
-                    // Update previous actions for this symbol
-                    previousActions[symbol] = RSIAction;
-                    previousActionsM[symbol] = DecisionAction;
-                    previousActionsMACD[symbol] = MACDAction;
-                    console.log("Updated Previous Actions for Symbol", symbol + ":", RSIAction, DecisionAction, MACDAction);
+            console.log("Symbol:", symbol);
+            console.log("RSIAction:", RSIAction);
+            console.log("DecisionAction:", DecisionAction);
+            console.log("MACDAction:", MACDAction);
+
+            // Check if previous action exists for this symbol and if it's different
+            if ((previousActions.hasOwnProperty(symbol) && previousActions[symbol] !== RSIAction) || 
+                (previousActionsM.hasOwnProperty(symbol) && previousActionsM[symbol] !== DecisionAction) || 
+                (previousActionsMACD.hasOwnProperty(symbol) && previousActionsMACD[symbol] !== MACDAction)) {
+                
+                var message = symbol + ": ";
+                
+                // Check for changes in RSI Action
+                if (previousActions.hasOwnProperty(symbol) && previousActions[symbol] !== RSIAction) {
+                    message += "RSI changed from " + previousActions[symbol] + " to " + RSIAction + ".\n";
                 }
-            });
+                
+                // Check for changes in Final Decision Action
+                if (previousActionsM.hasOwnProperty(symbol) && previousActionsM[symbol] !== DecisionAction) {
+                    message += "Decision changed from " + previousActionsM[symbol] + " to " + DecisionAction + ".\n";
+                }
 
-            // Store updated previous actions in sessionStorage
-            sessionStorage.setItem('previousActions', JSON.stringify(previousActions));
-            sessionStorage.setItem('previousActionsM', JSON.stringify(previousActionsM));
-            sessionStorage.setItem('previousActionsMACD', JSON.stringify(previousActionsMACD));
+                // Check for changes in MACD Action
+                if (previousActionsMACD.hasOwnProperty(symbol) && previousActionsMACD[symbol] !== MACDAction) {
+                    message += "MACD changed from " + previousActionsMACD[symbol] + " to " + MACDAction + ".\n";
+                }
+                
+                alert(message);
+                console.log("Alert triggered for Symbol", symbol + ":", message);
+            }
+            // Update previous actions for this symbol
+            previousActions[symbol] = RSIAction;
+            previousActionsM[symbol] = DecisionAction;
+            previousActionsMACD[symbol] = MACDAction;
+            console.log("Updated Previous Actions for Symbol", symbol + ":", RSIAction, DecisionAction, MACDAction);
         }
+    });
+
+    // Store updated previous actions in sessionStorage
+    sessionStorage.setItem('previousActions', JSON.stringify(previousActions));
+    sessionStorage.setItem('previousActionsM', JSON.stringify(previousActionsM));
+    sessionStorage.setItem('previousActionsMACD', JSON.stringify(previousActionsMACD));
+}
 
         window.onload = function() {
             checkAlerts();
