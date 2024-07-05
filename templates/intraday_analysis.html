@@ -37,7 +37,7 @@
         function startAutoRefresh() {
             refreshInterval = setInterval(function() {
                 location.reload();
-            }, 60000); // 180000 milliseconds = 5 seconds
+            }, 100000); // 180000 milliseconds = 5 seconds
             updateRefreshTime(); // Update timestamp immediately on start
             document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
         }
@@ -79,7 +79,10 @@
             document.body.appendChild(link);
             link.click();
         }
-        var previousActions = JSON.parse(sessionStorage.getItem('previousActions')) || {};
+        // Retrieve previous actions from sessionStorage or initialize if they don't exist
+var previousActions = JSON.parse(sessionStorage.getItem('previousActions')) || {};
+var previousActionsM = JSON.parse(sessionStorage.getItem('previousActionsM')) || {};
+var previousActionsMACD = JSON.parse(sessionStorage.getItem('previousActionsMACD')) || {};
 
 function checkAlerts() {
     var rows = document.querySelectorAll("table tbody tr");
@@ -90,30 +93,49 @@ function checkAlerts() {
         if (cells.length >= 15) { // Adjust based on your table structure
             var symbol = cells[0].innerText.trim(); // Symbol column
             var intraTradeAction = cells[9].innerText.trim(); // Intra Trade Action column
+            var BBTradeAction = cells[11].innerText.trim(); // Break Buy Action column
+            var MACDAction = cells[10].innerText.trim(); // MACD Action column
             var lastPrice = parseFloat(cells[1].innerText.trim()); // Last Price column
             var target = parseFloat(cells[13].innerText.trim()); // Target column
             var stopLoss = parseFloat(cells[14].innerText.trim()); // Stop Loss column
 
-            // Check if previous action exists for this symbol and is different
-            if (!previousActions.hasOwnProperty(symbol) || previousActions[symbol] !== intraTradeAction) {
-                if (previousActions[symbol]) {
-                    var message = symbol + ": Intra trade action changed from " + previousActions[symbol] + " to " + intraTradeAction + ".\nLast Price: " + lastPrice + "\nTarget: " + target + "\nStop Loss: " + stopLoss;
-                    alert(message);
-                } else {
-                    var message = symbol + ": Initial Intra trade action is " + intraTradeAction + ".\nLast Price: " + lastPrice + "\nTarget: " + target + "\nStop Loss: " + stopLoss;
+            // Check if previous action exists for this symbol and if it's different
+            if ((previousActions.hasOwnProperty(symbol) && previousActions[symbol] !== intraTradeAction) || 
+                (previousActionsM.hasOwnProperty(symbol) && previousActionsM[symbol] !== BBTradeAction)|| 
+                (previousActionsMACD.hasOwnProperty(symbol) && previousActionsMACD[symbol] !== MACDAction)) {
+                
+                var message = symbol + ": ";
+                
+                // Check for changes in Intra Trade Action
+                if (previousActions.hasOwnProperty(symbol) && previousActions[symbol] !== intraTradeAction) {
+                    message += "Intra trade action changed from " + previousActions[symbol] + " to " + intraTradeAction + ".\n";
                 }
-                //alert(message);
+                
+                // Check for changes in Break Buy Action
+                if (previousActionsM.hasOwnProperty(symbol) && previousActionsM[symbol] !== BBTradeAction) {
+                    message += "Break Buy action changed from " + previousActionsM[symbol] + " to " + BBTradeAction + ".\n";
+                }
+                // Check for changes in MACD Action
+                if (previousActionsMACD.hasOwnProperty(symbol) && previousActionsMACD[symbol] !== MACDAction) {
+                    message += "Break Buy action changed from " + previousActionsMACD[symbol] + " to " + MACDAction + ".\n";
+                }
+                
+                //message += "Last Price: " + lastPrice + "\nTarget: " + target + "\nStop Loss: " + stopLoss;
+                
+                alert(message);
                 console.log("Alert triggered for Symbol", symbol + ":", message);
             }
-
-            // Update previous action for this symbol
+            // Update previous actions for this symbol
             previousActions[symbol] = intraTradeAction;
-            console.log("Updated Previous Action for Symbol", symbol + ":", intraTradeAction);
+            previousActionsM[symbol] = BBTradeAction;
+            previousActionsMACD[symbol] = MACDAction;
+            console.log("Updated Previous Actions for Symbol", symbol + ":", intraTradeAction, BBTradeAction,MACDAction);
         }
     });
 
-    // Store updated previousActions in sessionStorage
+    // Store updated previous actions in sessionStorage
     sessionStorage.setItem('previousActions', JSON.stringify(previousActions));
+    sessionStorage.setItem('previousActionsM', JSON.stringify(previousActionsM));
 }
 
 
