@@ -158,11 +158,15 @@ function updateRefreshTime() {
         </div>
     </nav>
     
-    <p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
-    <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
-
+    <div class="container">
+        <p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
+            <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
+        
+            <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
+            <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
+                
     
-    <button onclick="downloadCSV()">Download CSV</button><BR><BR><BR>
+    <button onclick="downloadCSV()">Download CSV</button><BR><BR><BR></div>
     <div class="container">
     <h1>Delivery Analysis</h1>
     <p>Last Refreshed: {{ last_refreshed }}</p>
