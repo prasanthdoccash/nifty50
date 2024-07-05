@@ -56,8 +56,30 @@
             var refreshTime = formattedDate + ' ' + formattedTime;
             document.getElementById('refreshTime').innerText = 'Last Refreshed: ' + refreshTime;
         }
-        / Retrieve previousActions from sessionStorage or initialize if it doesn't exist
-var previousActions = JSON.parse(sessionStorage.getItem('previousActions')) || {};
+        
+        function downloadCSV() {
+            var csv = [];
+            var rows = document.querySelectorAll("table tr");
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = [], cols = rows[i].querySelectorAll("td, th");
+
+                for (var j = 0; j < cols.length; j++) {
+                    row.push(cols[j].innerText);
+                }
+                
+                csv.push(row.join(","));
+            }
+
+            var csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Intraday_analysis.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+        var previousActions = JSON.parse(sessionStorage.getItem('previousActions')) || {};
 
 function checkAlerts() {
     var rows = document.querySelectorAll("table tbody tr");
@@ -92,28 +114,9 @@ function checkAlerts() {
     // Store updated previousActions in sessionStorage
     sessionStorage.setItem('previousActions', JSON.stringify(previousActions));
 }
-        function downloadCSV() {
-            var csv = [];
-            var rows = document.querySelectorAll("table tr");
 
-            for (var i = 0; i < rows.length; i++) {
-                var row = [], cols = rows[i].querySelectorAll("td, th");
 
-                for (var j = 0; j < cols.length; j++) {
-                    row.push(cols[j].innerText);
-                }
-                
-                csv.push(row.join(","));
-            }
 
-            var csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
-            var encodedUri = encodeURI(csvContent);
-            var link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Intraday_analysis.csv");
-            document.body.appendChild(link);
-            link.click();
-        }
         // Call startAutoRefresh on page load
         window.onload = function() {
             startAutoRefresh();
