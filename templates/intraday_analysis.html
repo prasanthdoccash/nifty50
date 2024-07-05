@@ -37,7 +37,7 @@
         function startAutoRefresh() {
             refreshInterval = setInterval(function() {
                 location.reload();
-            }, 10000); // 60000 milliseconds = 5 seconds
+            }, 60000); // 60000 milliseconds = 5 seconds
             updateRefreshTime(); // Update timestamp immediately on start
             document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
         }
