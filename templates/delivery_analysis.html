@@ -73,7 +73,6 @@ function updateRefreshTime() {
             document.body.appendChild(link);
             link.click();
         }
-        // Call startAutoRefresh on page load
         var previousActions = JSON.parse(sessionStorage.getItem('previousActions')) || {};
         var previousActionsM = JSON.parse(sessionStorage.getItem('previousActionsM')) || {};
         var previousActionsMACD = JSON.parse(sessionStorage.getItem('previousActionsMACD')) || {};
