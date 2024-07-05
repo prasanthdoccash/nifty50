@@ -98,10 +98,11 @@ function checkAlerts() {
             if (!previousActions.hasOwnProperty(symbol) || previousActions[symbol] !== intraTradeAction) {
                 if (previousActions[symbol]) {
                     var message = symbol + ": Intra trade action changed from " + previousActions[symbol] + " to " + intraTradeAction + ".\nLast Price: " + lastPrice + "\nTarget: " + target + "\nStop Loss: " + stopLoss;
+                    alert(message);
                 } else {
                     var message = symbol + ": Initial Intra trade action is " + intraTradeAction + ".\nLast Price: " + lastPrice + "\nTarget: " + target + "\nStop Loss: " + stopLoss;
                 }
-                alert(message);
+                //alert(message);
                 console.log("Alert triggered for Symbol", symbol + ":", message);
             }
 
