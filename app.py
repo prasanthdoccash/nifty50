@@ -12,7 +12,7 @@ from ta.trend import MACD, EMAIndicator, SMAIndicator, ADXIndicator
 from ta.volatility import BollingerBands
 import json
 
-'''import os
+import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -22,7 +22,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)'''
+os.makedirs(cache_dir)
 
 app = Flask(__name__)
 
@@ -45,8 +45,24 @@ def calculate_indicators(df):
     df['bollinger_low'] = bollinger.bollinger_lband()
     df['adx'] = ADXIndicator(df['High'], df['Low'], df['Close'], window=14).adx()
     df['stochastic'] = StochasticOscillator(df['High'], df['Low'], df['Close'], window=14).stoch()
-    #df['vwap'] = VolumeWeightedAveragePrice(df['High'], df['Low'], df['Close'], df['Volume'], window=14).vwap()
-    df['vwap'] = 0
+    vwap_indicator = ta.volume.VolumeWeightedAveragePrice(
+        high=df['High'],
+        low=df['Low'],
+        close=df['Close'],
+        volume=df['Volume'],
+        window=14,  # the window parameter, you can adjust this based on your needs
+        fillna=True  # handle NaN values
+    )
+    df['vwap'] = vwap_indicator.vwap
+    df['ROC'] = ta.momentum.roc(df['Close'], window=12)
+    df['Volume_Trend'] = df['Volume'].rolling(window=20).mean()
+    df['williams_r'] = ta.momentum.WilliamsRIndicator(
+        high=df['High'],
+        low=df['Low'],
+        close=df['Close'],
+        lbp=14,  # look-back period, commonly set to 14
+        fillna=True  # handle NaN values
+    ).williams_r()
     return df
 
 # Function to make trading decisions
@@ -62,7 +78,9 @@ def final_decision(df,vix):
         'adx': last_row['adx'],
         'stochastic': last_row['stochastic'],
         'vwap': last_row['vwap'],
-        
+        'Volume_Trend' :last_row['Volume_Trend'],
+        'ROC':last_row['ROC'],
+        'williams_r': last_row['williams_r']
     }
 
     buy_signals = 0
@@ -73,7 +91,36 @@ def final_decision(df,vix):
     sell = []
     hold = []
     
+    if indicators['williams_r'] < -80: #overbought
+        sell_signals += 1 
+        sell.append('williamsR')
+    elif indicators['williams_r'] > -20: #oversold
+        buy.append('williamsR') 
+        buy_signals += 1
+    else:
+        hold_signal +=1
+        hold.append('williamsR')
     
+    if indicators['ROC'] > 0: #increasing
+        buy.append('ROC')
+        buy_signals += 1
+    elif indicators['ROC'] < 0: #decreasing
+        sell_signals += 1
+        sell.append('ROC')
+    else:
+        hold_signal +=1
+        hold.append('ROC')
+
+    
+    if indicators['Volume_Trend'] > df['Volume_Trend'].shift(1).iloc[-1]: #increasing
+        buy.append('Volume_Trend')
+        buy_signals += 1  
+    elif indicators['Volume_Trend'] < df['Volume_Trend'].shift(1).iloc[-1]: #decreasing
+        sell_signals += 1
+        sell.append('Volume_Trend')
+    else:
+        hold_signal +=1
+        hold.append('Volume_Trend')
 
     # RSI
     if indicators['rsi'] <= 30:
@@ -186,17 +233,18 @@ def fetch_price_data(symbol):
     
     lastPrice =float(dq[symbol].get('lastPrice', 0))
     
-        
+       
     
     return lastPrice
 
 def calculate_roc(df, window=12):
-    df['ROC'] = ta.momentum.roc(df['CLOSE'], window=window)
+    df['ROC'] = ta.momentum.roc(df['CLOSE'], window=12)
+    print(df['ROC'])
     return df
 
 def calculate_volume_trend(df, window=20):
     if 'VOLUME' in df.columns:
-        df['Volume_Trend'] = df['VOLUME'].rolling(window=window).mean()
+        df['Volume_Trend'] = df['VOLUME'].rolling(window=20).mean()
     return df
 
 def calculate_vix(symb):
@@ -422,7 +470,7 @@ def delivery(symbols_get):
         try:
             # Calculate indicators
             df = calculate_indicators(df)
-            
+            print(df.columns)
             #current_price = df['CH_LAST_TRADED_PRICE'].iloc[-1] if 'CH_LAST_TRADED_PRICE' in df.columns else 'N/A'
             #company_name = df['CH_SYMBOL'].iloc[0] if 'CH_SYMBOL' in df.columns else 'N/A'
             
@@ -520,6 +568,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
     
-    #app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True, host='0.0.0.0', port=80)
