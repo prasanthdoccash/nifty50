@@ -8,4 +8,3 @@ lxml
 requests
 ta
 flask_caching
-json
