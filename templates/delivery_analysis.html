@@ -106,10 +106,10 @@ function checkAlerts() {
 
         // Ensure cells exist and have the necessary data
         if (cells.length >= 8) { // Adjust based on your table structure
-            var symbol = cells[0].innerText.trim(); // Symbol column
-            var RSIAction = cells[0].innerText.trim(); // RSI column
-            var DecisionAction = cells[5].innerText.trim(); // Final Decision column
-            var MACDAction = cells[6].innerText.trim(); // MACD Action column
+            var symbol = cells[1].innerText.trim(); // Symbol column
+            var RSIAction = cells[1].innerText.trim(); // RSI column
+            var DecisionAction = cells[6].innerText.trim(); // Final Decision column
+            var MACDAction = cells[7].innerText.trim(); // MACD Action column
 
             console.log("Symbol:", symbol);
             console.log("RSIAction:", RSIAction);
