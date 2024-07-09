@@ -95,7 +95,6 @@
                 alert('No symbols selected');
             }
         }
-
         var dpreviousActions = JSON.parse(sessionStorage.getItem('dpreviousActions')) || {};
 var dpreviousActionsM = JSON.parse(sessionStorage.getItem('dpreviousActionsM')) || {};
 var dpreviousActionsMACD = JSON.parse(sessionStorage.getItem('dpreviousActionsMACD')) || {};
@@ -158,7 +157,6 @@ function checkAlerts() {
         
 
 
-
         window.onload = function() {
             checkAlerts();
             startAutoRefresh();
@@ -218,7 +216,8 @@ function checkAlerts() {
     <div class="container">
         <h1>Delivery Analysis</h1>
         <p>Last Refreshed: {{ last_refreshed }}</p>
-        <h3><b>Important Indicators:</b> EMA , VWAP, MACD - Should be in BUY</h3>
+        <h5><b>Important Indicators:</b> EMA , VWAP, MACD, williamsR, ROC - Should be in BUY</h5>
+        <h6><b>Volume Trends:</b> In BUY</h6>
         <table border="1">
             <thead>
                 <tr>
