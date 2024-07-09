@@ -4,4 +4,8 @@ pandas
 jugaad_data
 datetime
 yfinance
+lxml
+requests
 ta
+flask_caching
+json
