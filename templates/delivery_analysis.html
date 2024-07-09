@@ -11,13 +11,9 @@
         .buy-decision {
             background-color: lightgreen;
         }
-    </style>
-    <style>
         .superbuy-decision {
             background-color: rgb(83, 179, 235);
         }
-    </style>
-    <style>
         /* Add space between <td> elements */
         td {
             padding-right: 20px; /* Adjust as needed */
@@ -26,30 +22,29 @@
     <script>
         var refreshInterval; // Variable to hold the interval ID
 
-// Function to start or resume auto-refresh
-function startAutoRefresh() {
-    refreshInterval = setInterval(function() {
-        location.reload();
-    }, 180000); // 5000 milliseconds = 5 seconds
-    updateRefreshTime(); // Update timestamp immediately on start
-    document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
-}
+        // Function to start or resume auto-refresh
+        function startAutoRefresh() {
+            refreshInterval = setInterval(function() {
+                location.reload();
+            }, 10000); // 120000 milliseconds = 2 minutes
+            updateRefreshTime(); // Update timestamp immediately on start
+            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
+        }
 
-// Function to pause auto-refresh
-function pauseAutoRefresh() {
-    clearInterval(refreshInterval); // Clear the interval
-    document.getElementById('refreshStatus').innerText = 'Auto Refresh: Paused';
-}
+        // Function to pause auto-refresh
+        function pauseAutoRefresh() {
+            clearInterval(refreshInterval); // Clear the interval
+            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Paused';
+        }
 
-// Function to update last refreshed date and time
-function updateRefreshTime() {
-    var now = new Date();
-    var formattedTime = now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
-    var formattedDate = now.toLocaleDateString('en-US');
-    var refreshTime = formattedDate + ' ' + formattedTime;
-    document.getElementById('refreshTime').innerText = 'Last Refreshed: ' + refreshTime;
-}
-
+        // Function to update last refreshed date and time
+        function updateRefreshTime() {
+            var now = new Date();
+            var formattedTime = now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+            var formattedDate = now.toLocaleDateString('en-US');
+            var refreshTime = formattedDate + ' ' + formattedTime;
+            document.getElementById('refreshTime').innerText = 'Last Refreshed: ' + refreshTime;
+        }
 
         function downloadCSV() {
             var csv = [];
@@ -73,70 +68,46 @@ function updateRefreshTime() {
             document.body.appendChild(link);
             link.click();
         }
-        var dpreviousActions = JSON.parse(sessionStorage.getItem('dpreviousActions')) || {};
-var dpreviousActionsM = JSON.parse(sessionStorage.getItem('dpreviousActionsM')) || {};
-var dpreviousActionsMACD = JSON.parse(sessionStorage.getItem('dpreviousActionsMACD')) || {};
 
-function checkAlerts() {
-    var rows = document.querySelectorAll("table tbody tr");
-    rows.forEach(row => {
-        var cells = row.querySelectorAll("td");
+        function addToWatchlist() {
+            var checkboxes = document.querySelectorAll('input[name="watchlist"]:checked');
+            var symbols = [];
+            checkboxes.forEach((checkbox) => {
+                symbols.push(checkbox.value);
+            });
 
-        // Ensure cells exist and have the necessary data
-        if (cells.length >= 13) { // Adjust based on your table structure
-            var symbol = cells[0].innerText.trim(); // Symbol column
-            var RSIAction = cells[3].innerText.trim(); // RSI column
-            var DecisionAction = cells[12].innerText.trim(); // Final Decision column
-            var MACDAction = cells[6].innerText.trim(); // MACD Action column
-
-            console.log("Symbol:", symbol);
-            console.log("RSIAction:", RSIAction);
-            console.log("DecisionAction:", DecisionAction);
-            console.log("MACDAction:", MACDAction);
-
-            // Check if previous action exists for this symbol and if it's different
-            if ((dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) || 
-                (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction) || 
-                (dpreviousActionsMACD.hasOwnProperty(symbol) && dpreviousActionsMACD[symbol] !== MACDAction)) {
-                
-                var message = symbol + ": ";
-                
-                // Check for changes in RSI Action
-                if (dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) {
-                    message += "RSI changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
-                }
-                
-                // Check for changes in Final Decision Action
-                if (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction) {
-                    message += "Decision changed from " + dpreviousActionsM[symbol] + " to " + DecisionAction + ".\n";
-                }
-
-                // Check for changes in MACD Action
-                if (dpreviousActionsMACD.hasOwnProperty(symbol) && dpreviousActionsMACD[symbol] !== MACDAction) {
-                    message += "MACD changed from " + dpreviousActionsMACD[symbol] + " to " + MACDAction + ".\n";
-                }
-                
-                alert(message);
-                console.log("Alert triggered for Symbol", symbol + ":", message);
+            if (symbols.length > 0) {
+                fetch('/add_to_watchlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ symbols: symbols })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            } else {
+                alert('No symbols selected');
             }
-            // Update previous actions for this symbol
-            dpreviousActions[symbol] = RSIAction;
-            dpreviousActionsM[symbol] = DecisionAction;
-            dpreviousActionsMACD[symbol] = MACDAction;
-            console.log("Updated Previous Actions for Symbol", symbol + ":", RSIAction, DecisionAction, MACDAction);
         }
-    });
 
-    // Store updated previous actions in sessionStorage
-    sessionStorage.setItem('dpreviousActions', JSON.stringify(dpreviousActions));
-    sessionStorage.setItem('dpreviousActionsM', JSON.stringify(dpreviousActionsM));
-    sessionStorage.setItem('dpreviousActionsMACD', JSON.stringify(dpreviousActionsMACD));
-}
+        
+
 
         window.onload = function() {
             checkAlerts();
             startAutoRefresh();
         };
+    </script>
+    <script>
+        function showWatchlist() {
+            window.location.href = '/show_watchlist';
+        }
     </script>
 </head>
 <body>
@@ -163,73 +134,69 @@ function checkAlerts() {
             </ul>
         </div>
     </nav>
-    
+    <div class="container">
+        <h5>Market Sentiment: <span><b>{{ vix_senti }}</b></span></h5>
+        <div class="result">
+            <table>
+                <tr>
+                    <td>VIX: <span>{{ vix if vix is not none else "Data not available" }}</span><br></td>
+                </tr>
+            </table>
+        </div>
+    </div>
     <div class="container">
         <p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
-            <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
-        
-            <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
-            <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
-                
-    
-    <button onclick="downloadCSV()">Download CSV</button><BR><BR><BR></div>
+        <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
+        <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
+        <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
+        <button onclick="downloadCSV()">Download CSV</button>
+        <button onclick="addToWatchlist()">Add to Watchlist</button>
+        <button onclick="showWatchlist()">Show Watchlist</button>
+        <br><br><br>
+        <div id="watchlistContainer"></div>
+    </div>
     <div class="container">
-    <h1>Delivery Analysis</h1>
-    <p>Last Refreshed: {{ last_refreshed }}</p>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Symbol</th>
-                <th>Closing Price</th>
-                <th>VWAP</th>
-                <th>RSI</th>
-                <th>SMA</th>
-                <th>EMA</th>
-                <th>MACD</th>
-                <th>Bollinger Bands (Upper/Lower)</th>
-                <th>Bid-Ask Spread</th>
-                <th>Turnover Ratio</th>
-                <th>Pull Back</th>
-                <th>ADX</th>
-                <th>Final Decision</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for result in results %}
-            {% if result.decision == 'Buy' and (result.indicators_data['pullback_buy_action'] in ['Buy'] or result.indicators_data['MACD_Crossover'] == 'Bullish') %}
-                <tr class="superbuy-decision">
-                {% elif result.decision == 'Buy' and result.indicators_data['MACD_Crossover'] in ['Hold', 'Bullish'] %}
-                <tr class="buy-decision">
-                    
-            {% else %}
-            <tr>
-            {% endif %}
-            
-            
-                <td>{{ result.symbol }}</td>
-                <td>{{ result.LTP }}</td>
-                <td>{{ result.indicators_data['VWAP'] }}</td>
-                <td>{{ result.indicators_data['RSI'] }}</td>
-                <td>{{ result.indicators_data['SMA'] }}</td>
-                <td>{{ result.indicators_data['EMA'] }}</td>
-                <td>{{ result.indicators_data['MACD_Crossover'] }}</td>
-                <td>
-                    {% if 'Bollinger Bands' in result.indicators_data %}
-                     {{ result.indicators_data['Bollinger Bands'].split(',')[0] | default('N/A') }} 
-                    / {{ result.indicators_data['Bollinger Bands'].split(',')[1] | default('N/A') }}
-                    {% else %}
-                    N/A
-                    {% endif %}
-                </td>
-                <td>{{ result.indicators_data['Bid-Ask Spread'] }}</td>
-                <td>{{ result.indicators_data['Turnover Ratio'] }}</td>
-                <td>{{ result.indicators_data['pullback_buy_action'] }}</td>
-                <td>{{ result.indicators_data['adx'] }}</td>
-                <td>{{ result.decision }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div> 
+        <h1>Delivery Analysis</h1>
+        <p>Last Refreshed: {{ last_refreshed }}</p>
+        <h3><b>Important Indicators:</b> EMA , VWAP, MACD - Should be in BUY</h3>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Watchlist</th>
+                    <th>Symbol</th>
+                    <th>LTP</th>
+                    <th>Buy Signals</th>
+                    <th>Sell Signals</th>
+                    <th>Hold Signals</th>
+                    <th>Final Decision</th>
+                    <th>Buy</th>
+                    <th>Sell</th>
+                    <th>Hold</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                {% if result.decision == 'Super Buy' %}
+                    <tr class="superbuy-decision">
+                {% elif result.decision == 'Buy' %}
+                    <tr class="buy-decision">
+                {% else %}
+                    <tr>
+                {% endif %}
+                    <td><input type="checkbox" name="watchlist" value="{{ result.symbol }}"></td>
+                    <td>{{ result.symbol }}</td>
+                    <td>{{ result.LTP }}</td>
+                    <td>{{ result.buy_signals }}</td>
+                    <td>{{ result.sell_signals }}</td>
+                    <td>{{ result.hold_signal }}</td>
+                    <td>{{ result.decision }}</td>
+                    <td>{{ result.buy }}</td>
+                    <td>{{ result.sell }}</td>
+                    <td>{{ result.hold }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div> 
 </body>
 </html>
