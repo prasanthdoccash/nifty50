@@ -96,7 +96,67 @@
             }
         }
 
+        var dpreviousActions = JSON.parse(sessionStorage.getItem('dpreviousActions')) || {};
+var dpreviousActionsM = JSON.parse(sessionStorage.getItem('dpreviousActionsM')) || {};
+var dpreviousActionsMACD = JSON.parse(sessionStorage.getItem('dpreviousActionsMACD')) || {};
+
+function checkAlerts() {
+    var rows = document.querySelectorAll("table tbody tr");
+    rows.forEach(row => {
+        var cells = row.querySelectorAll("td");
+
+        // Ensure cells exist and have the necessary data
+        if (cells.length >= 8) { // Adjust based on your table structure
+            var symbol = cells[0].innerText.trim(); // Symbol column
+            var RSIAction = cells[0].innerText.trim(); // RSI column
+            var DecisionAction = cells[5].innerText.trim(); // Final Decision column
+            var MACDAction = cells[6].innerText.trim(); // MACD Action column
+
+            console.log("Symbol:", symbol);
+            console.log("RSIAction:", RSIAction);
+            console.log("DecisionAction:", DecisionAction);
+            console.log("MACDAction:", MACDAction);
+
+            // Check if previous action exists for this symbol and if it's different
+            if ((dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) || 
+                (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction) || 
+                (dpreviousActionsMACD.hasOwnProperty(symbol) && dpreviousActionsMACD[symbol] !== MACDAction)) {
+                
+                var message = symbol + ": ";
+                
+                // Check for changes in RSI Action
+                if (dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) {
+                    message += "RSI changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
+                }
+                
+                // Check for changes in Final Decision Action
+                if (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction) {
+                    message += "Decision changed from " + dpreviousActionsM[symbol] + " to " + DecisionAction + ".\n";
+                }
+
+                // Check for changes in MACD Action
+                if (dpreviousActionsMACD.hasOwnProperty(symbol) && dpreviousActionsMACD[symbol] !== MACDAction) {
+                    message += "Buy Indicator changed from " + dpreviousActionsMACD[symbol] + " to " + MACDAction + ".\n";
+                }
+                
+                alert(message);
+                console.log("Alert triggered for Symbol", symbol + ":", message);
+            }
+            // Update previous actions for this symbol
+            dpreviousActions[symbol] = RSIAction;
+            dpreviousActionsM[symbol] = DecisionAction;
+            dpreviousActionsMACD[symbol] = MACDAction;
+            console.log("Updated Previous Actions for Symbol", symbol + ":", RSIAction, DecisionAction, MACDAction);
+        }
+    });
+
+    // Store updated previous actions in sessionStorage
+    sessionStorage.setItem('dpreviousActions', JSON.stringify(dpreviousActions));
+    sessionStorage.setItem('dpreviousActionsM', JSON.stringify(dpreviousActionsM));
+    sessionStorage.setItem('dpreviousActionsMACD', JSON.stringify(dpreviousActionsMACD));
+}
         
+
 
 
         window.onload = function() {
