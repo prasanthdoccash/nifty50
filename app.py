@@ -11,8 +11,9 @@ from ta.momentum import RSIIndicator, StochasticOscillator
 from ta.trend import MACD, EMAIndicator, SMAIndicator, ADXIndicator
 from ta.volatility import BollingerBands
 import json
+import analyst
 
-import os
+'''import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -22,15 +23,10 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 
 app = Flask(__name__)
 
-# Function to fetch stock data
-def fetch_stock_data(ticker):
-    stock = yf.Ticker(ticker)
-    hist = stock.history(period="5d", interval="1m")  # Changed to 5 days to get enough data for indicators
-    return hist
 
 def calculate_indicators(df):
     df['rsi'] = RSIIndicator(df['Close'], window=14).rsi()
@@ -216,7 +212,7 @@ def fetch_delivery_data(symbols):
         
         stock = yf.Ticker(symbol)
         
-        df = stock.history(period="30d", interval="1h") # 30d 1h identifies Stocks to Buys
+        df = stock.history(period="30d", interval="15m") # 30d 1h identifies Stocks to Buys
         #print(df)
         
         if not df.empty:
@@ -239,7 +235,7 @@ def fetch_price_data(symbol):
 
 def calculate_roc(df, window=12):
     df['ROC'] = ta.momentum.roc(df['CLOSE'], window=12)
-    print(df['ROC'])
+    
     return df
 
 def calculate_volume_trend(df, window=20):
@@ -423,9 +419,7 @@ predefined_symbols1 = [
 def home():
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     return render_template('index.html',vix=vix,vix_senti=vix_senti)
-    #return render_template('index.html',senti=senti,vix=vix,call_put_ratio=ncall_put_ratio,volume=nvolume)
-
-
+   
 
 @app.route('/input_symbol', methods=['GET', 'POST'])
 def input_symbol():
@@ -443,15 +437,15 @@ def delivery(symbols_get):
 
     
     if symbols_get != "":
-        print("1",symbols_get)
+        
         # Get symbols from predefined or request
         symbols_list = symbols_get
         symbols = symbols_list if symbols_list else predefined_symbols
     else:
         symbols1 = request.args.get('symbols')
-        print("2",symbols1)
+        
         symbols = symbols1.split(',') if symbols1 else predefined_symbols
-    print("2pritn",symbols)
+    
         #today = dt.date.today()
     #end_date = today #- dt.timedelta(days=1)  # Yesterday's date
     #start_date = end_date - dt.timedelta(days=50)  # 50 days before yesterday
@@ -470,18 +464,12 @@ def delivery(symbols_get):
         try:
             # Calculate indicators
             df = calculate_indicators(df)
-            print(df.columns)
+            
             #current_price = df['CH_LAST_TRADED_PRICE'].iloc[-1] if 'CH_LAST_TRADED_PRICE' in df.columns else 'N/A'
             #company_name = df['CH_SYMBOL'].iloc[0] if 'CH_SYMBOL' in df.columns else 'N/A'
             
             #df['pullback_buy_action'],df['MACD_Crossover'] = delivery_longdate(symbol)
-            '''price_targets = combine.get_analyst_recommendations(symbol)
             
-                    
-            if last_price <= price_targets:
-                target = price_targets
-            else:
-                target = target'''
                      
             
             # Determine final decision based on sentiment
@@ -489,6 +477,16 @@ def delivery(symbols_get):
             symbols_NS = symbol[:-3]
             last_Price = fetch_price_data(symbols_NS)
             
+            price_targets = analyst.get_analyst_recommendations(symbol)
+            price_targets = price_targets.replace(',', '')
+            price_targets =float(price_targets)
+                 
+            if last_Price <= price_targets:
+                target = price_targets
+            else:
+                target = 0
+
+
             # Prepare data for each symbol
             symbol_data = {
                 'symbol': symbol,
@@ -497,7 +495,7 @@ def delivery(symbols_get):
                 #'indicators_data': indicators,
                 #'sentiment': sentiment,
                 'decision': decision,
-                #'price_target': price_targets
+                'price_target': target,
                 'buy_signals':buy_signals,
                 'sell_signals':sell_signals,
                 'hold_signal':hold_signal,
@@ -521,11 +519,8 @@ def delivery1():
     symb = ''
     results,last_refreshed,vix,vix_senti = delivery(symb)
     
-    
-    #print(vix)
     return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
-    #return render_template('delivery_analysis.html', results=results, last_refreshed=last_refreshed,vix=vix, call_put_ratio=call_put_ratio,volume=volume,senti=senti)
-
+   
 
 @app.route('/add_to_watchlist', methods=['POST'])
 def add_to_watchlist():
@@ -552,9 +547,11 @@ def get_watchlist():
 @app.route('/show_watchlist')
 def show_watchlist():
     symbols = get_watchlist_symbols()
-    print("getwatchlist",symbols)
+    
     results,last_refreshed,vix,vix_senti = delivery(symbols)
     return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix, vix_senti=vix_senti)
+
+
 
 # Function to get symbols from watchlist
 def get_watchlist_symbols():
@@ -568,6 +565,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
+    app.run(debug=True)
     
-    app.run(debug=True, host='0.0.0.0', port=80)
+    #app.run(debug=True, host='0.0.0.0', port=80)
