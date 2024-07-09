@@ -3,8 +3,6 @@ import datetime as dt
 from jugaad_data.nse import NSELive,stock_df
 import pandas as pd
 import ta
-#from live import final_decision
-import combine
 from datetime import date, timedelta
 from flask import Flask, render_template, request, jsonify
 import yfinance as yf
@@ -12,7 +10,6 @@ import pandas as pd
 from ta.momentum import RSIIndicator, StochasticOscillator
 from ta.trend import MACD, EMAIndicator, SMAIndicator, ADXIndicator
 from ta.volatility import BollingerBands
-from ta.volume import VolumeWeightedAveragePrice
 import json
 
 '''import os
@@ -193,18 +190,6 @@ def fetch_price_data(symbol):
     
     return lastPrice
 
-def fetch_intraday_data(symbols):
-    
-    all_data = {}
-    for symbol in symbols:
-        #df = stock_df(symbol=symbol, from_date=start_date, to_date=end_date, series="EQ")
-        stock = yf.Ticker(symbol)
-        df = stock.history(period="5d", interval="1m")  # Changed to 5 days to get enough data for indicators
-        if not df.empty:
-            all_data[symbol] = df
-    
-    return all_data
-
 def calculate_roc(df, window=12):
     df['ROC'] = ta.momentum.roc(df['CLOSE'], window=window)
     return df
@@ -230,12 +215,6 @@ def calculate_vix(symb):
         vix_senti = 'Volatile'
     return df,vix,vix_senti
 
-def calculate_call_put_ratio(df):
-    _, _,call_put_ratio,_ = combine.predict_nifty()
-    df['CallPutRatio'] = call_put_ratio
-    df['CallPutSentiment'] = df['CallPutRatio'].apply(lambda x: 'Bullish' if x > 1 else 'Bearish')
-    
-    return df
 
 def determine_sentiment(df):
     sentiment = {}
@@ -392,55 +371,12 @@ predefined_symbols1 = [
                          "UNITDSPR", "VEDL", "IDEA", "VOLTAS", "WIPRO", "ZYDUSLIFE"
                          ]'''
 
-nse = NSELive()
-
-def fetch_live_data(symbols):
-    data = {}
-    for symbol in symbols:
-        try:
-            nse = NSELive()
-            q = nse.stock_quote(symbol)
-            data[symbol] = q['priceInfo']
-        except Exception as e:
-            print(f"Error fetching data for {symbol}: {str(e)}")
-            data[symbol] = {'lastPrice': 'N/A'}  # Handle error case
-    return data
-
-
 @app.route('/')
 def home():
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     return render_template('index.html',vix=vix,vix_senti=vix_senti)
     #return render_template('index.html',senti=senti,vix=vix,call_put_ratio=ncall_put_ratio,volume=nvolume)
 
-
-@app.route('/predict')
-def final():
-    if request.method == 'POST':
-        symbols = request.form['symbols'].split()
-        if not symbols:
-            symbols = predefined_symbols
-    else:
-        symbols = predefined_symbols
-
-    intraday_decisions = {}
-    for stock in symbols:
-        df = fetch_live_data(stock)
-        df = calculate_indicators(df)
-        decision = final_decision(df)
-        intraday_decisions[stock] = decision
-
-    delivery_decisions = {}
-    for stock in symbols:
-        df = fetch_stock_data(stock)
-        df = calculate_indicators(df)
-        decision = final_decision(df)
-        delivery_decisions[stock] = decision
-
-    combined_decisions = [(stock, intraday_decisions[stock], delivery_decisions[stock]) for stock in symbols]
-
-    return render_template('combine.html', stocks=combined_decisions)
-    
 
 
 @app.route('/input_symbol', methods=['GET', 'POST'])
@@ -542,8 +478,6 @@ def delivery1():
     return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
     #return render_template('delivery_analysis.html', results=results, last_refreshed=last_refreshed,vix=vix, call_put_ratio=call_put_ratio,volume=volume,senti=senti)
 
-# Global variable to store today's high at a specific time
-todays_high_at_specific_time = 0
 
 @app.route('/add_to_watchlist', methods=['POST'])
 def add_to_watchlist():
@@ -583,141 +517,6 @@ def get_watchlist_symbols():
         symbols = []
     
     return symbols
-
-# Function to identify intraday high and low and determine intra trade action
-def intraday_high_low(intra_day_data, last_price,open_price):
-    
-    intraday_high = intra_day_data.get('max', 0)
-    
-    intraday_low = intra_day_data.get('min', 0)
-    
-    # Define the threshold for "near" as a percentage of the price range
-    threshold = 0.005  # 1% for example
-
-    # Calculate thresholds for high and low
-    high_threshold = intraday_high - (intraday_high * threshold)
-    
-    low_threshold = intraday_low + (intraday_low * threshold)
-    
-
-    if last_price >= high_threshold:
-        
-        
-        intra_trade_action = 'Buy'
-    
-    elif last_price < low_threshold:
-        intra_trade_action = 'Sell'
-    else: intra_trade_action = 'Hold'
-    
-    global todays_high_at_specific_time
-    if todays_high_at_specific_time == 0 or last_price > todays_high_at_specific_time:
-        todays_high_at_specific_time = intraday_high
-        
-     # Check for Break Buy condition
-    #break_buy_action = 'Buy' if last_price > todays_high_at_specific_time else 'Hold'
-    if last_price >=(intraday_low *1.01) or last_price > todays_high_at_specific_time: #opportunity to buy
-        break_buy_action= 'Buy'
-    elif last_price <=(intraday_high *0.98): #opportunity to buy
-        break_buy_action= 'sell' 
-    else:
-        break_buy_action= 'Hold'
-    # Calculate stop-loss level (below intraday low)
-    stop_loss = open_price * 0.99  # Example: 1% below intraday low
-    # Calculate target level 
-    target = open_price * 1.01  # Example: 1% below intraday low
-    return intraday_high, intraday_low, intra_trade_action, break_buy_action, stop_loss,target
-
-
-# Route to fetch stock data and render HTML template
-#@app.route('/intraday')
-def stock_analysis():
-    global todays_high_at_specific_time  # Access the global variable
-    #symbols = predefined_symbols  # Example symbol for demonstration
-    symbols1 = request.args.get('symbols')
-    symbols = symbols1.split(',') if symbols1 else predefined_symbols
-    
-    stock_analysis_data = []
-    
-    for symbol in symbols:
-        
-        try:
-            #q = nse.stock_quote(symbol)
-            stock_data = fetch_intraday_data(symbol)
-
-            # Extract open price and previous close from priceInfo block
-            open_price = float(stock_data.get('open', 0))
-            previous_close = float(stock_data.get('previousClose', 0))
-            last_price = float(stock_data.get('lastPrice', 0))
-            
-            # Calculate market sentiment
-            #sentiment = market_sentiment(open_price, previous_close)
-
-            # Get intraday high, low, and intra trade action
-            intra_day_data = stock_data.get('intraDayHighLow', {})
-            
-            intraday_high, intraday_low, intra_trade_action, break_buy_action, stop_loss,target = intraday_high_low(intra_day_data, last_price,open_price)
-            
-            price_data = pd.DataFrame({
-                'CLOSE': [open_price, last_price, intraday_high, intraday_low]  # Example data points
-            })
-            price_targets = combine.get_analyst_recommendations(symbol)
-            
-                    
-            if last_price <= price_targets:
-                target = price_targets
-            else:
-                target = target
-            
-            #pullback_buy_action,macd_crossover = delivery_longdate(symbol)
-            #price_data['pullback_buy_action'],price_data['MACD_Crossover'] = delivery_longdate(symbol)
-            #pullback_buy_action =price_data['pullback_buy_action'].iloc[-1]
-            #macd_crossover = price_data['MACD_Crossover'].iloc[-1]
-            
-            symbol_data = {'symbol': symbol,
-                'last_price': last_price,
-                'change': round(float(stock_data.get('change', 0)), 2),
-                'p_change': round(float(stock_data.get('pChange', 0)), 2),
-                'previous_close': previous_close,
-                'open_price': open_price,
-                'intraday_high': intraday_high,
-                'intraday_low': intraday_low,
-                #'market_sentiment': sentiment,
-                'intra_trade_action': intra_trade_action,
-                'break_buy_action': break_buy_action,
-                'stop_loss': round(stop_loss, 2),
-                'target': round(target,2),
-                'macd_crossover': macd_crossover,
-                'pullback_buy_action': pullback_buy_action
-                           }
-            stock_analysis_data.append(symbol_data)
-            
-        except Exception as e:
-            print(f"Error fetching data for {symbol}: {str(e)}")
-            stock_data = {'lastPrice': 'N/A'}
-            sentiment = 'N/A'
-            intraday_high = 'N/A'
-            intraday_low = 'N/A'
-            intra_trade_action = 'N/A'
-            break_buy_action = 'N/A'
-            stop_loss = 'N/A'
-            target = 'N/A'
-            macd_crossover = 'N/A'
-            pullback_buy_action = 'N/A'
-    
-    return stock_analysis_data
-    #return render_template('intraday_analysis.html', stock_analysis_data=stock_analysis_data)
-
-@app.route('/intraday')
-def intraday_stock():
-    stock_analysis_dat = stock_analysis()
-    try:
-        senti, vix, call_put_ratio,volume = combine.predict_nifty()
-    except:
-        senti, vix, call_put_ratio,volume = "None",1,1,1
-    
-    return render_template('intraday_analysis.html', data=stock_analysis_dat,vix=vix, call_put_ratio=call_put_ratio,volume=volume,senti=senti)
-    #return render_template('intraday_analysis.html', stock_analysis_data=stock_analysis_data)
-    
 
 
 if __name__ == "__main__":
