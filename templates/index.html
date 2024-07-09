@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Analysis</title>
+    <title>Intraday Analysis</title>
     <!-- Include Bootstrap CSS for styling -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
@@ -67,11 +67,9 @@
                 <li class="nav-item active">
                     <a class="nav-link" href="/delivery">Delivery</a>
                 </li>
+                
                 <li class="nav-item">
-                    <a class="nav-link" href="/intraday">Intraday</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="https://marketprediction.onrender.com/" targert="_blank">Predict</a>
+                    <a class="nav-link" href="https://marketprediction.onrender.com/" target ="_blank">Predict</a>
                 </li>
             </ul>
         </div>
@@ -79,19 +77,21 @@
     
 
     <div class="container mt-4">
-       
+        <h3>Market: {{vix_senti }}</h3>
+        <div class="result">
+            <table>
+                <tr>
+            <td>VIX: <span>{{ vix if vix is not none else "Data not available" }}</span><br></td>
+            
+        </tr>
+        </table>
+        </div>
         <h4>NIFTY50</h4>
         <div class="row">
             <div class="col-12 col-md-6 mb-2">
                 <a class="btn btn-success btn-block" href="/delivery">Delivery</a>
             </div>
-            <div class="col-12 col-md-6">
-                <a class="btn btn-success btn-block" href="/intraday">Intraday</a>
-            </div>
-            <div class="col-12 col-md-6">
-                <a class="btn btn-success btn-block" href="/predict">Suggestions</a>
-            </div>
-        </div>
+            
     </div>
     <div class="container mt-4">
         <h4>Search Symbol</h4>
@@ -101,7 +101,7 @@
             </div>
             
             <div class="col-12 col-md-6">
-                <a class="btn btn-success btn-block" href="https://marketprediction.onrender.com/" targert="_blank">Market Prediction</a>
+                <a class="btn btn-success btn-block" href="https://marketprediction.onrender.com/" target ="_blank">Market Prediction</a>
             </div>
         </div>
     </div>
@@ -111,10 +111,9 @@
             1. Only NSE symbols are allowed.<br>
             2. Only for educational purposes, not responsible for any loss incurred. <br>
             3. Click on the Delivery button to get long-term investment suggestions on all Nifty50 stocks. <br>
-            4. Click on the Intraday button to get intraday trading suggestions on all Nifty50 stocks.<br>
-            5. Click on the Search button to search for long-term or intraday suggestions with a particular symbol. A list of symbols is provided on the same page.<br>
-            6. Symbols highlighted in Blue indicate Super Buy.<br>
-            7. Symbols highlighted in Green indicate Buy.<br>
+            4. Click on the Search button to search for long-term or intraday suggestions with a particular symbol. A list of symbols is provided on the same page.<br>
+            5. Symbols highlighted in Blue indicate Super Buy.<br>
+            6. Symbols highlighted in Green indicate Buy.<br>
         </p>
     </div>
     <footer>By Prasanth N</footer>
