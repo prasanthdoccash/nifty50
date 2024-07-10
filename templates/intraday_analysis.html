@@ -1,33 +1,22 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Intraday Analysis</title>
     <!-- Include Bootstrap CSS for styling -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        .bullish {
-            color: rgb(161, 14, 125);
-        }
-        .bearish {
-            color: red;
-        }
-    </style>
-    <style>
-        /* Add space between <td> elements */
-        td {
-            padding-right: 20px; /* Adjust as needed */
-        }
-    </style>
+    
     <style>
         .buy-decision {
             background-color: lightgreen;
         }
-    </style>
-    <style>
         .superbuy-decision {
             background-color: rgb(83, 179, 235);
+        }
+        /* Add space between <td> elements */
+        td {
+            padding-right: 20px; /* Adjust as needed */
         }
     </style>
     <script>
@@ -37,7 +26,7 @@
         function startAutoRefresh() {
             refreshInterval = setInterval(function() {
                 location.reload();
-            }, 100000); // 180000 milliseconds = 5 seconds
+            }, 120000); // 120000 milliseconds = 2 minutes
             updateRefreshTime(); // Update timestamp immediately on start
             document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
         }
@@ -56,7 +45,7 @@
             var refreshTime = formattedDate + ' ' + formattedTime;
             document.getElementById('refreshTime').innerText = 'Last Refreshed: ' + refreshTime;
         }
-        
+
         function downloadCSV() {
             var csv = [];
             var rows = document.querySelectorAll("table tr");
@@ -79,10 +68,36 @@
             document.body.appendChild(link);
             link.click();
         }
-        // Retrieve previous actions from sessionStorage or initialize if they don't exist
-var previousActions = JSON.parse(sessionStorage.getItem('previousActions')) || {};
-var previousActionsM = JSON.parse(sessionStorage.getItem('previousActionsM')) || {};
-var previousActionsMACD = JSON.parse(sessionStorage.getItem('previousActionsMACD')) || {};
+
+        function addToWatchlist() {
+            var checkboxes = document.querySelectorAll('input[name="watchlist"]:checked');
+            var symbols = [];
+            checkboxes.forEach((checkbox) => {
+                symbols.push(checkbox.value);
+            });
+
+            if (symbols.length > 0) {
+                fetch('/add_to_watchlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ symbols: symbols })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            } else {
+                alert('No symbols selected');
+            }
+        }
+        var dpreviousActions = JSON.parse(sessionStorage.getItem('dpreviousActions')) || {};
+var dpreviousActionsM = JSON.parse(sessionStorage.getItem('dpreviousActionsM')) || {};
+var dpreviousActionsMACD = JSON.parse(sessionStorage.getItem('dpreviousActionsMACD')) || {};
 
 function checkAlerts() {
     var rows = document.querySelectorAll("table tbody tr");
@@ -90,67 +105,70 @@ function checkAlerts() {
         var cells = row.querySelectorAll("td");
 
         // Ensure cells exist and have the necessary data
-        if (cells.length >= 15) { // Adjust based on your table structure
-            var symbol = cells[0].innerText.trim(); // Symbol column
-            var intraTradeAction = cells[9].innerText.trim(); // Intra Trade Action column
-            var BBTradeAction = cells[11].innerText.trim(); // Break Buy Action column
-            var MACDAction = cells[10].innerText.trim(); // MACD Action column
-            var lastPrice = parseFloat(cells[1].innerText.trim()); // Last Price column
-            var target = parseFloat(cells[13].innerText.trim()); // Target column
-            var stopLoss = parseFloat(cells[14].innerText.trim()); // Stop Loss column
+        if (cells.length >= 8) { // Adjust based on your table structure
+            var symbol = cells[1].innerText.trim(); // Symbol column
+            var RSIAction = cells[1].innerText.trim(); // RSI column
+            var DecisionAction = cells[6].innerText.trim(); // Final Decision column
+            var MACDAction = cells[1].innerText.trim(); // MACD Action column
+
+            console.log("Symbol:", symbol);
+            console.log("RSIAction:", RSIAction);
+            console.log("DecisionAction:", DecisionAction);
+            console.log("MACDAction:", MACDAction);
 
             // Check if previous action exists for this symbol and if it's different
-            if ((previousActions.hasOwnProperty(symbol) && previousActions[symbol] !== intraTradeAction) || 
-                (previousActionsM.hasOwnProperty(symbol) && previousActionsM[symbol] !== BBTradeAction)|| 
-                (previousActionsMACD.hasOwnProperty(symbol) && previousActionsMACD[symbol] !== MACDAction)) {
+            if ((dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) || 
+                (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction) || 
+                (dpreviousActionsMACD.hasOwnProperty(symbol) && dpreviousActionsMACD[symbol] !== MACDAction)) {
                 
                 var message = symbol + ": ";
                 
-                // Check for changes in Intra Trade Action
-                if (previousActions.hasOwnProperty(symbol) && previousActions[symbol] !== intraTradeAction) {
-                    message += "Intra trade action changed from " + previousActions[symbol] + " to " + intraTradeAction + ".\n";
+                // Check for changes in RSI Action
+                if (dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) {
+                    message += "RSI changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
                 }
                 
-                // Check for changes in Break Buy Action
-                if (previousActionsM.hasOwnProperty(symbol) && previousActionsM[symbol] !== BBTradeAction) {
-                    message += "Break Buy action changed from " + previousActionsM[symbol] + " to " + BBTradeAction + ".\n";
+                // Check for changes in Final Decision Action
+                if (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction) {
+                    message += "Decision changed from " + dpreviousActionsM[symbol] + " to " + DecisionAction + ".\n";
                 }
+
                 // Check for changes in MACD Action
-                if (previousActionsMACD.hasOwnProperty(symbol) && previousActionsMACD[symbol] !== MACDAction) {
-                    message += "Break Buy action changed from " + previousActionsMACD[symbol] + " to " + MACDAction + ".\n";
+                if (dpreviousActionsMACD.hasOwnProperty(symbol) && dpreviousActionsMACD[symbol] !== MACDAction) {
+                    message += "Buy Indicator changed from " + dpreviousActionsMACD[symbol] + " to " + MACDAction + ".\n";
                 }
-                
-                //message += "Last Price: " + lastPrice + "\nTarget: " + target + "\nStop Loss: " + stopLoss;
                 
                 alert(message);
                 console.log("Alert triggered for Symbol", symbol + ":", message);
             }
             // Update previous actions for this symbol
-            previousActions[symbol] = intraTradeAction;
-            previousActionsM[symbol] = BBTradeAction;
-            previousActionsMACD[symbol] = MACDAction;
-            console.log("Updated Previous Actions for Symbol", symbol + ":", intraTradeAction, BBTradeAction,MACDAction);
+            dpreviousActions[symbol] = RSIAction;
+            dpreviousActionsM[symbol] = DecisionAction;
+            dpreviousActionsMACD[symbol] = MACDAction;
+            console.log("Updated Previous Actions for Symbol", symbol + ":", RSIAction, DecisionAction, MACDAction);
         }
     });
 
     // Store updated previous actions in sessionStorage
-    sessionStorage.setItem('previousActions', JSON.stringify(previousActions));
-    sessionStorage.setItem('previousActionsM', JSON.stringify(previousActionsM));
+    sessionStorage.setItem('dpreviousActions', JSON.stringify(dpreviousActions));
+    sessionStorage.setItem('dpreviousActionsM', JSON.stringify(dpreviousActionsM));
+    sessionStorage.setItem('dpreviousActionsMACD', JSON.stringify(dpreviousActionsMACD));
 }
+        
 
 
-
-        // Call startAutoRefresh on page load
         window.onload = function() {
-            startAutoRefresh();
             checkAlerts();
+            startAutoRefresh();
         };
+    </script>
+    <script>
+        function showWatchlist() {
+            window.location.href = '/show_watchlist_int';
+        }
     </script>
 </head>
 <body>
-    
-    <h1>Intraday Analysis</h1>
-    
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
         <a class="navbar-brand" href="/">MyApp</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -168,75 +186,81 @@ function checkAlerts() {
                 <li class="nav-item active">
                     <a class="nav-link" href="/delivery">Delivery</a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item active">
                     <a class="nav-link" href="/intraday">Intraday</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/show_watchlist_int">Watchlist</a>
                 </li>
             </ul>
         </div>
     </nav>
-    
-<br>
-<div class="container">
-<p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
-    <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
-
-    <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
-    <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
-        <button onclick="downloadCSV()">Download CSV</button><br></div>
-<div class="container">
-    <table border="1">
-        <thead><tr>
-            <th>Symbol</th>
-            <th>Last Price</th>
-            <th>Change</th>
-            <th>% Change</th>
-            <th>Previous Close</th>
-            <th>Open Price</th>
-            <th>Intraday High</th>
-            <th>Intraday Low</th>
-            <th>Market Sentiment</th>
-            <th>Intra Trade Action</th>
-            <th>MACD</th>
-            <th>Break Buy Action</th>
-            <th>Pull Back</th>
-            <th>Target</th>
-            <th>Stop Loss</th>
-          
-            
-        </tr>
-    </thead> 
-        <tbody>
-        {% for data in stock_analysis_data %}
-        {% if data.intra_trade_action == 'Buy' and (data.break_buy_action == 'Buy' or data.macd_crossover =='Bullish' or data.pullback_buy_action =='Buy')  %}
-                <tr class="superbuy-decision">
-                {% elif data.intra_trade_action == 'Buy' and data.market_sentiment == 'Bullish' and data.p_change >0.2%}
-                <tr class="buy-decision">
+    <div class="container">
+        <h5>Market Sentiment: <span><b>{{ vix_senti }}</b></span></h5>
+        <div class="result">
+            <table>
+                <tr>
+                    <td>VIX: <span>{{ vix if vix is not none else "Data not available" }}</span><br></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="container">
+        <p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
+        <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
+        <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
+        <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
+        <button onclick="downloadCSV()">Download CSV</button>
+        <button onclick="addToWatchlist()">Add to Watchlist</button>
+        <button onclick="showWatchlist()">Show Watchlist</button>
+        <br><br><br>
+        <div id="watchlistContainer"></div>
+    </div>
+    <div class="container">
+        <h1>Intraday Analysis</h1>
+        <p>Last Refreshed: {{ last_refreshed }}</p>
+        <h5><b>Important Indicators:</b> EMA , VWAP, MACD, williamsR, ROC - Should be in BUY</h5>
+        <h6><b>Volume Trends:</b> In BUY</h6>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Watchlist</th>
+                    <th>Symbol</th>
+                    <th>LTP</th>
+                    <th>Buy Signals</th>
+                    <th>Sell Signals</th>
+                    <th>Hold Signals</th>
+                    <th>Final Decision</th>
                     
-            {% else %}
-            <tr>
-            {% endif %}
-        
-            <td>{{ data.symbol }}</td>
-            <td>{{ data.last_price }}</td>
-            <td>{{ data.change }}</td>
-            <td>{{ data.p_change }}</td>
-            <td>{{ data.previous_close }}</td>
-            <td>{{ data.open_price }}</td>
-            <td>{{ data.intraday_high }}</td>
-            <td>{{ data.intraday_low }}</td>
-            <td >{{ data.market_sentiment }}</td>
-            <td >{{ data.intra_trade_action }}</td>
-            <td >{{ data.macd_crossover }}</td>
-            <td>{{ data.break_buy_action }}</td>
-            <td >{{ data.pullback_buy_action }}</td>
-            <td class="{{ 'bullish' if data.intraday_high >= data.target }}">{{ data.target }}</td>
-            <td class="{{ 'bearish' if data.intraday_low <= data.stop_loss  }}">{{ data.stop_loss }}</td>
-            
-        </tr>
-        {% endfor %}
-    </tbody>
-    </table>
-</div>
-
+                    <th>Buy</th>
+                    <th>Sell</th>
+                    <th>Hold</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                {% if result.decision == 'Super Buy' %}
+                    <tr class="superbuy-decision">
+                {% elif result.decision == 'Buy' %}
+                    <tr class="buy-decision">
+                {% else %}
+                    <tr>
+                {% endif %}
+                    <td><input type="checkbox" name="watchlist" value="{{ result.symbol }}"></td>
+                    <td>{{ result.symbol }}</td>
+                    <td>{{ result.LTP }}</td>
+                    <td>{{ result.buy_signals }}</td>
+                    <td>{{ result.sell_signals }}</td>
+                    <td>{{ result.hold_signal }}</td>
+                    <td>{{ result.decision }}</td>
+                    
+                    <td>{{ result.buy }}</td>
+                    <td>{{ result.sell }}</td>
+                    <td>{{ result.hold }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div> 
 </body>
 </html>
