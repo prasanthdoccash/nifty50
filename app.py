@@ -11,9 +11,9 @@ from ta.momentum import RSIIndicator, StochasticOscillator
 from ta.trend import MACD, EMAIndicator, SMAIndicator, ADXIndicator
 from ta.volatility import BollingerBands
 import json
-import analyst
 
-'''import os
+
+import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -23,13 +23,14 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)'''
+os.makedirs(cache_dir)
 
 app = Flask(__name__)
 
 
 def calculate_indicators(df):
     df['rsi'] = RSIIndicator(df['Close'], window=14).rsi()
+    
     macd = MACD(df['Close'], window_slow=26, window_fast=12, window_sign=9)
     df['macd'] = macd.macd()
     df['macd_signal'] = macd.macd_signal()
@@ -39,7 +40,15 @@ def calculate_indicators(df):
     bollinger = BollingerBands(df['Close'], window=20, window_dev=2)
     df['bollinger_high'] = bollinger.bollinger_hband()
     df['bollinger_low'] = bollinger.bollinger_lband()
-    df['adx'] = ADXIndicator(df['High'], df['Low'], df['Close'], window=14).adx()
+    #df['adx'] = ADXIndicator(df['High'], df['Low'], df['Close'], window=14).adx()
+    # Calculate ADX, +DI, and -DI using ta library
+    df['adx1'] = ta.trend.adx(df['High'], df['Low'], df['Close'], window=14)
+    df['+DI'] = ta.trend.adx_pos(df['High'], df['Low'], df['Close'], window=14)
+    df['-DI'] = ta.trend.adx_neg(df['High'], df['Low'], df['Close'], window=14)
+
+    # Determine buy signals
+    df['adx'] = (df['adx1'] > 20) & (df['+DI'] > df['-DI']) & (df['+DI'].shift(1) <= df['-DI'].shift(1))
+    
     df['stochastic'] = StochasticOscillator(df['High'], df['Low'], df['Close'], window=14).stoch()
     vwap_indicator = ta.volume.VolumeWeightedAveragePrice(
         high=df['High'],
@@ -64,8 +73,10 @@ def calculate_indicators(df):
 # Function to make trading decisions
 def final_decision(df,vix):
     last_row = df.iloc[-1]
+    
     indicators = {
         'rsi': last_row['rsi'],
+        
         'macd': last_row['macd'],
         'ema': last_row['ema'],
         'sma': last_row['sma'],
@@ -117,15 +128,17 @@ def final_decision(df,vix):
     else:
         hold_signal +=1
         hold.append('Volume_Trend')
-
+   
+    rsi2 = df['rsi'].iloc[-1] - df['rsi'].iloc[-2]
+    
     # RSI
-    if indicators['rsi'] <= 30:
+    if indicators['rsi'] <= 30: #oversold
         buy.append('RSI')
         buy_signals += 1
-    elif indicators['rsi'] >= 70:
-        sell_signals += 1
+    elif indicators['rsi'] >= 80: #overbought
+        sell_signals += 1 
         sell.append('RSI')
-    elif indicators['rsi'] > 30 and indicators['rsi'] < 70:
+    elif indicators['rsi'] > 30 and indicators['rsi'] < 80:
         hold_signal +=1
         hold.append('RSI')
 
@@ -159,7 +172,8 @@ def final_decision(df,vix):
 
     # ADX
     
-    if indicators['adx'] > 25:
+    if indicators['adx'] == True:
+        
         if last_row['Close'] > indicators['ema']:
             buy_signals += 1
             buy.append('ADX')
@@ -169,7 +183,7 @@ def final_decision(df,vix):
     else:
         hold_signal +=1
         hold.append('ADX')
-
+    
     # Stochastic Oscillator
     if indicators['stochastic'] < 20:
         buy_signals += 1
@@ -190,7 +204,20 @@ def final_decision(df,vix):
         sell_signals += 1
         sell.append('VWAP')
     
-    if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
+    if rsi2 > 0 and 'ADX' in buy and 'Volume_Trend' in buy:
+        return 'Intra Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
+    elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy) or ('VWAP' in buy and 'MACD' in buy and 'ROC' in buy and 'EMA' not in buy):
+        if rsi2 > 0 or 'Volume_Trend' in buy:
+            return 'Super Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
+        elif rsi2 > 0 and 'Volume_Trend' in sell:
+             
+             return 'Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
+        else:
+            
+            return 'Hold',buy_signals,sell_signals,hold_signal, buy,sell,hold
+    else:
+        return 'Sell',buy_signals,sell_signals,hold_signal, buy,sell,hold
+    '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
 
         return 'Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
     elif buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal):
@@ -201,19 +228,21 @@ def final_decision(df,vix):
     else:
         return 'Hold',buy_signals,sell_signals,hold_signal, buy,sell,hold
    
-    #if result.decision == 'Buy' and (result.buy_signals >0 and result.sell_signals ==0)
+    #if result.decision == 'Buy' and (result.buy_signals >0 and result.sell_signals ==0)'''
 
 ###########################################################################
 nse = NSELive()
-def fetch_delivery_data(symbols):
+def fetch_delivery_data(symbols, num):
     
     all_data = {}
     for symbol in symbols:
         
         stock = yf.Ticker(symbol)
-        
-        df = stock.history(period="30d", interval="15m") # 30d 1h identifies Stocks to Buys
-        #print(df)
+        if num == 0:
+            df = stock.history(period="90d", interval="1d") # 30d 1h identifies Stocks for delivery
+        else:
+            df = stock.history(period="7d", interval="1m") # 7d 1m identifies Stocks for intraday
+       
         
         if not df.empty:
             all_data[symbol] = df
@@ -250,117 +279,17 @@ def calculate_vix(symb):
     
     df['VIX'] = df['High'].iloc[-1]
     vix = df['High'].iloc[-1]
+    vix2 = df['High'].iloc[-2]
+    vix3 = vix - vix2
+    
     vix = round(vix,2)
     df['VIX_Level'] = df['VIX'].apply(lambda x: 'Low' if x < 15 else 'High')
-    if vix < 15:
-        vix_senti = 'Neutral'
+    if vix3 > 0:
+        vix_senti = 'Bearish'
         
-    elif vix >=15:
-        vix_senti = 'Volatile'
+    elif vix < 0:
+        vix_senti = 'Bullish'
     return df,vix,vix_senti
-
-
-def determine_sentiment(df):
-    sentiment = {}
-    
-    if 'VWAP' in df.columns and 'CLOSE' in df.columns:
-        vwap = df['VWAP'].iloc[-1]
-        current_price = df['CLOSE'].iloc[-1]
-        if current_price > vwap:
-            sentiment['VWAP'] = 'Bullish'
-        elif current_price < vwap:
-            sentiment['VWAP'] = 'Bearish'
-        else:
-            sentiment['VWAP'] = 'Neutral'
-    
-    if 'RSI' in df.columns:
-        rsi = df['RSI'].iloc[-1]
-        if rsi < 30:
-            sentiment['RSI'] = 'Undervalued'
-        elif rsi > 70:
-            sentiment['RSI'] = 'Overvalued'
-        else:
-            sentiment['RSI'] = 'Neutral'
-    
-    if 'SMA' in df.columns and 'CLOSE' in df.columns:
-        if df['CLOSE'].iloc[-1] < df['SMA'].iloc[-1]:
-            sentiment['SMA'] = 'Bearish'
-        else:
-            sentiment['SMA'] = 'Bullish'
-    
-    if 'EMA' in df.columns and 'CLOSE' in df.columns:
-        if df['CLOSE'].iloc[-1] < df['EMA'].iloc[-1]:
-            sentiment['EMA'] = 'Bearish'
-        else:
-            sentiment['EMA'] = 'Bullish'
-    
-    if 'Upper Band' in df.columns and 'Lower Band' in df.columns and 'CLOSE' in df.columns:
-        upper_band = df['Upper Band'].iloc[-1]
-        lower_band = df['Lower Band'].iloc[-1]
-        current_price = df['CLOSE'].iloc[-1]
-        
-        if current_price < lower_band:
-            sentiment['Bollinger Bands'] = 'Oversold'
-        elif current_price > upper_band:
-            sentiment['Bollinger Bands'] = 'Overbought'
-        else:
-            sentiment['Bollinger Bands'] = 'Neutral'
-    
-    if 'Bid-Ask Spread' in df.columns:
-        sentiment['Bid-Ask Spread'] = 'Positive'
-    
-    if 'Turnover Ratio' in df.columns:
-        turnover_ratio = df['Turnover Ratio'].iloc[-1]
-        if turnover_ratio > 1:
-            sentiment['Turnover Ratio'] = 'Positive'
-        elif turnover_ratio < 1:
-            sentiment['Turnover Ratio'] = 'Negative'
-        else:
-            sentiment['Turnover Ratio'] = 'Neutral'
-
-    if 'Williams_R' in df.columns:
-        williams_r = df['Williams_R'].iloc[-1]
-        if williams_r < -80:
-            sentiment['Williams_R'] = 'Overbought'
-        elif williams_r > -20:
-            sentiment['Williams_R'] = 'Oversold'
-        else:
-            sentiment['Williams_R'] = 'Neutral'
-    if '%K' in df.columns:
-        stochastic_k = df['%K'].iloc[-1]
-        if stochastic_k < 20:
-            sentiment['Stochastic'] = 'Buy Signal'
-        elif stochastic_k > 80:
-            sentiment['Stochastic'] = 'Sell Signal'
-        else:
-            sentiment['Stochastic'] = 'Neutral'
-    if 'ROC' in df.columns:
-        roc = df['ROC'].iloc[-1]
-        if roc > 0:
-            sentiment['ROC'] = 'Increasing'
-        elif roc < 0:
-            sentiment['ROC'] = 'Decreasing'
-        else:
-            sentiment['ROC'] = 'Neutral'
-
-    if 'Volume_Trend' in df.columns:
-        volume_trend = df['Volume_Trend'].iloc[-1]
-        if volume_trend > df['Volume_Trend'].shift(1).iloc[-1]:
-            sentiment['Volume_Trend'] = 'Increasing'
-        elif volume_trend < df['Volume_Trend'].shift(1).iloc[-1]:
-            sentiment['Volume_Trend'] = 'Decreasing'
-        else:
-            sentiment['Volume_Trend'] = 'Neutral'
-    if 'MACD_Crossover' in df.columns:
-        macd_crossover = df['MACD_Crossover'].iloc[-1]
-        if macd_crossover == 'Bullish':
-            sentiment['MACD'] = 'Buy Signal'
-        elif macd_crossover == 'Bearish':
-            sentiment['MACD'] = 'Sell Signal'
-        else:
-            sentiment['MACD'] = 'Neutral'
-    
-    return sentiment
 
 
 
@@ -446,17 +375,10 @@ def delivery(symbols_get):
         
         symbols = symbols1.split(',') if symbols1 else predefined_symbols
     
-        #today = dt.date.today()
-    #end_date = today #- dt.timedelta(days=1)  # Yesterday's date
-    #start_date = end_date - dt.timedelta(days=50)  # 50 days before yesterday
+        
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    #start_date = dt.date(2023, 6, 1)
-    #end_date = dt.date(2023, 6, 28)
-    #last_prices()
     
-    #symbols =  "{}.NS".format(symbolsk)
-    #calculate_vix()
-    data = fetch_delivery_data(symbols)
+    data = fetch_delivery_data(symbols,0)
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
     
@@ -465,27 +387,13 @@ def delivery(symbols_get):
             # Calculate indicators
             df = calculate_indicators(df)
             
-            #current_price = df['CH_LAST_TRADED_PRICE'].iloc[-1] if 'CH_LAST_TRADED_PRICE' in df.columns else 'N/A'
-            #company_name = df['CH_SYMBOL'].iloc[0] if 'CH_SYMBOL' in df.columns else 'N/A'
-            
-            #df['pullback_buy_action'],df['MACD_Crossover'] = delivery_longdate(symbol)
-            
-                     
+                                
             
             # Determine final decision based on sentiment
             decision,buy_signals,sell_signals,hold_signal, buy,sell,hold = final_decision(df,vix)
             symbols_NS = symbol[:-3]
             last_Price = fetch_price_data(symbols_NS)
             
-            price_targets = analyst.get_analyst_recommendations(symbol)
-            price_targets = price_targets.replace(',', '')
-            price_targets =float(price_targets)
-                 
-            if last_Price <= price_targets:
-                target = price_targets
-            else:
-                target = 0
-
 
             # Prepare data for each symbol
             symbol_data = {
@@ -495,7 +403,7 @@ def delivery(symbols_get):
                 #'indicators_data': indicators,
                 #'sentiment': sentiment,
                 'decision': decision,
-                'price_target': target,
+                #'price_target': target,
                 'buy_signals':buy_signals,
                 'sell_signals':sell_signals,
                 'hold_signal':hold_signal,
@@ -521,7 +429,73 @@ def delivery1():
     
     return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
    
+def intraday(symbols_get):
 
+    
+    if symbols_get != "":
+        
+        # Get symbols from predefined or request
+        symbols_list = symbols_get
+        symbols = symbols_list if symbols_list else predefined_symbols
+    else:
+        symbols1 = request.args.get('symbols')
+        
+        symbols = symbols1.split(',') if symbols1 else predefined_symbols
+    
+        
+    last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    data = fetch_delivery_data(symbols,1)
+    _,vix,vix_senti = calculate_vix('^INDIAVIX')
+    results = []
+    
+    for symbol, df in data.items():
+        try:
+            # Calculate indicators
+            df = calculate_indicators(df)
+            
+                                
+            
+            # Determine final decision based on sentiment
+            decision,buy_signals,sell_signals,hold_signal, buy,sell,hold = final_decision(df,vix)
+            symbols_NS = symbol[:-3]
+            last_Price = fetch_price_data(symbols_NS)
+            
+
+            # Prepare data for each symbol
+            symbol_data = {
+                'symbol': symbol,
+                #'company_name': company_name,
+                'LTP': last_Price,
+                #'indicators_data': indicators,
+                #'sentiment': sentiment,
+                'decision': decision,
+                #'price_target': target,
+                'buy_signals':buy_signals,
+                'sell_signals':sell_signals,
+                'hold_signal':hold_signal,
+                'buy':buy,
+                'sell':sell,
+                'hold': hold
+                
+            }
+            
+            results.append(symbol_data)  
+    
+        except KeyError as e:
+            print(f"KeyError: {str(e)}. Skipping symbol {symbol}.")
+            continue
+    
+    return results,last_refreshed,vix,vix_senti
+    
+    
+@app.route('/intraday')
+def intraday1():
+    symb = ''
+    results,last_refreshed,vix,vix_senti = delivery(symb)
+    
+    return render_template('intraday_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
+   
 @app.route('/add_to_watchlist', methods=['POST'])
 def add_to_watchlist():
     data = request.get_json()
@@ -551,6 +525,15 @@ def show_watchlist():
     results,last_refreshed,vix,vix_senti = delivery(symbols)
     return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix, vix_senti=vix_senti)
 
+# Set pandas option to avoid future warnings
+pd.set_option('future.no_silent_downcasting', True)
+
+@app.route('/show_watchlist_int')
+def show_watchlist_intra():
+    symbols = get_watchlist_symbols()
+    
+    results,last_refreshed,vix,vix_senti = intraday(symbols)
+    return render_template('intraday_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix, vix_senti=vix_senti)
 
 
 # Function to get symbols from watchlist
@@ -565,6 +548,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
     
-    #app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True, host='0.0.0.0', port=80)
