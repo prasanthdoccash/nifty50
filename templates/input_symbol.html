@@ -57,6 +57,9 @@
                 <li class="nav-item active">
                     <a class="nav-link" href="/delivery">Delivery</a>
                 </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/intraday">Intraday</a>
+                </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/show_watchlist">Watchlist</a>
                 </li>
@@ -78,7 +81,18 @@
 
         </form>
     </td>
-    
+    <td>
+        <h1>Intraday </h1>
+        <form action="/intraday" method="GET">
+            <div class="form-group">
+                <label for="symbol">Enter Symbols (comma-separated in captial with .NS at last ex: BPCL.NS):</label><br>
+                <input type="text" id="symbols" name="symbols" value="INFY.NS,RELIANCE.NS" required><br><br>
+                
+                <button type="submit"  class="btn btn-success">Intraday</button>
+            </div>
+
+        </form>
+    </td>
     
     </tr>
 </table>
