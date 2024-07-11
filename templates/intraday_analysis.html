@@ -26,7 +26,7 @@
         function startAutoRefresh() {
             refreshInterval = setInterval(function() {
                 location.reload();
-            }, 15000); // 20000 milliseconds = 2 minutes
+            }, 20000); // 120000 milliseconds = 2 minutes
             updateRefreshTime(); // Update timestamp immediately on start
             document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
         }
@@ -111,10 +111,7 @@ function checkAlerts() {
             var DecisionAction = cells[6].innerText.trim(); // Final Decision column
             var MACDAction = cells[1].innerText.trim(); // MACD Action column
 
-            console.log("Symbol:", symbol);
-            console.log("RSIAction:", RSIAction);
-            console.log("DecisionAction:", DecisionAction);
-            console.log("MACDAction:", MACDAction);
+            
 
             // Check if previous action exists for this symbol and if it's different
             if ((dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) || 
@@ -239,7 +236,7 @@ function checkAlerts() {
             </thead>
             <tbody>
                 {% for result in results %}
-                {% if result.decision == 'Super Buy' %}
+                {% if result.decision == 'Super Buy' or result.decision == 'Intra Buy'%}
                     <tr class="superbuy-decision">
                 {% elif result.decision == 'Buy' %}
                     <tr class="buy-decision">
