@@ -243,7 +243,7 @@ function checkAlerts() {
             </thead>
             <tbody>
                 {% for result in results %}
-                {% if result.decision == 'Super Buy'%}
+                {% if result.decision == 'Super Buy' or result.decision == 'Intra Buy'%}
                     <tr class="superbuy-decision">
                 {% elif result.decision == 'Buy' %}
                     <tr class="buy-decision">
