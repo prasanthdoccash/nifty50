@@ -232,12 +232,12 @@ def final_decision(df,vix):
         elif 'Buy' in buy and 'Volume_Trend' in buy:
 decision = 'Buy'
 
-else:
+        else:
             decision= 'Sell'
-    else:
-        decision= 'Sell'
+        else:
+            decision= 'Sell'
     
-    return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
+        return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
     '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
 
         return 'Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
