@@ -234,8 +234,8 @@ decision = 'Buy'
 
         else:
             decision= 'Sell'
-        else:
-            decision= 'Sell'
+    else:
+        decision= 'Sell'
     
         return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
     '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
