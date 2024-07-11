@@ -50,6 +50,7 @@ def calculate_indicators(df):
     df['adx'] = (df['adx1'] > 20) & (df['+DI'] > df['-DI']) & (df['+DI'].shift(1) <= df['-DI'].shift(1))
     
     df['stochastic'] = StochasticOscillator(df['High'], df['Low'], df['Close'], window=14).stoch()
+    
     vwap_indicator = ta.volume.VolumeWeightedAveragePrice(
         high=df['High'],
         low=df['Low'],
@@ -130,8 +131,21 @@ def final_decision(df,vix):
         hold.append('Volume_Trend')
    
     rsi2 = df['rsi'].iloc[-1] - df['rsi'].iloc[-2]
+    roc2 = df['ROC'].iloc[-1] - df['ROC'].iloc[-2]
+    stochastic2 = df['stochastic'].iloc[-1] - df['stochastic'].iloc[-2]
     
-    # RSI
+    # RSI , ROC, Stoch
+    if rsi2 > 0 and roc2 > 0 and stochastic2 > 0: #moving up
+        buy.append('Super Buy')
+        
+    elif (rsi2 > 0 and roc2 > 0) or (rsi2>0 and stochastic2>0) or(roc2>0 and stochastic2>0) : #either
+        
+        buy.append('Buy')
+    else:
+        
+        buy.append('Hold')
+    
+
     if indicators['rsi'] <= 30: #oversold
         buy.append('RSI')
         buy_signals += 1
@@ -141,6 +155,7 @@ def final_decision(df,vix):
     elif indicators['rsi'] > 30 and indicators['rsi'] < 80:
         hold_signal +=1
         hold.append('RSI')
+    
 
     # MACD
     if indicators['macd'] > 0:
@@ -204,13 +219,13 @@ def final_decision(df,vix):
         sell_signals += 1
         sell.append('VWAP')
     
-    if rsi2 > 0 and 'ADX' in buy and 'Volume_Trend' in buy:
+    if 'Super Buy' in buy or 'Buy' in buy and 'ADX' in buy and 'Volume_Trend' in buy:
         return 'Intra Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
     elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy):
-        if rsi2 > 0 or 'Volume_Trend' in buy:
+        if 'Super Buy' in buy  or 'Volume_Trend' in buy:
             return 'Super Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
         
-        else:
+        elif 'Buy' in buy or 'Volume_Trend' in buy:
             
             return 'Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
     else:
@@ -336,7 +351,7 @@ predefined_symbols1 = [
     "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
 ]
 '''predefined_symbols = [
-"RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "HINDUNILVR", "ITC", "KOTAKBANK", "SBIN", "BAJFINANCE",
+    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "HINDUNILVR", "ITC", "KOTAKBANK", "SBIN", "BAJFINANCE",
     "BHARTIARTL", "HDFC", "ASIANPAINT", "MARUTI", "DMART", "AXISBANK", "LT", "SUNPHARMA", "ADANIGREEN", "TITAN",
     "WIPRO", "ONGC", "M&M", "DIVISLAB", "HCLTECH", "ADANIENT", "BAJAJFINSV", "NTPC", "ULTRACEMCO", "TATACONSUM",
     "SBILIFE", "JSWSTEEL", "HEROMOTOCO", "INDUSINDBK", "COALINDIA", "TECHM", "BPCL", "POWERGRID", "TATAMOTORS",
@@ -364,7 +379,7 @@ predefined_symbols1 = [
     "TATAMOTORS", "TATASTEEL", "TCI", "TCNSBRANDS", "TECHM", "THERMAX", "TITAN", "TORNTPOWER", "TRENT", "TVSMOTOR",
     "UBL", "UFLEX", "ULTRACEMCO", "UNIONBANK", "UPL", "VARROC", "VBL", "VEDL", "VINATIORGA", "VOLTAS", "WABCOINDIA",
     "WELCORP", "WELSPUNIND", "WHIRLPOOL", "WIPRO", "WOCKPHARMA", "YESBANK", "ZEEL", "ZENSARTECH"
-                         ]'''
+]'''
 
 @app.route('/')
 def home():
