@@ -224,6 +224,7 @@ function checkAlerts() {
                     <th>Watchlist</th>
                     <th>Symbol</th>
                     <th>LTP</th>
+                    <th>Change %</th>
                     <th>Buy Signals</th>
                     <th>Sell Signals</th>
                     <th>Hold Signals</th>
@@ -246,6 +247,7 @@ function checkAlerts() {
                     <td><input type="checkbox" name="watchlist" value="{{ result.symbol }}"></td>
                     <td>{{ result.symbol }}</td>
                     <td>{{ result.LTP }}</td>
+                    <td>{{ result.pChange }}</td>
                     <td>{{ result.buy_signals }}</td>
                     <td>{{ result.sell_signals }}</td>
                     <td>{{ result.hold_signal }}</td>
