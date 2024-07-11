@@ -239,7 +239,7 @@ def fetch_delivery_data(symbols, num):
         if num == 0:
             df = stock.history(period="90d", interval="1d") # 30d 1h identifies Stocks for delivery
         else:
-            df = stock.history(period="7d", interval="5m") # 7d 1m identifies Stocks for intraday
+            df = stock.history(period="30d", interval="15m") # 7d 1m identifies Stocks for intraday
        
         
         if not df.empty:
