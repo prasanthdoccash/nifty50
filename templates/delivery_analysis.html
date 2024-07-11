@@ -118,7 +118,7 @@ function checkAlerts() {
 
             // Check if previous action exists for this symbol and if it's different
             if ((dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) || 
-                (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction) || 
+                (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction && DecisionAction === 'Sell') || 
                 (dpreviousActionsMACD.hasOwnProperty(symbol) && dpreviousActionsMACD[symbol] !== MACDAction)) {
                 
                 var message = symbol + ": ";
