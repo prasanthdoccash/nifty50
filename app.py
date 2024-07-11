@@ -218,20 +218,23 @@ def final_decision(df,vix):
     else:
         sell_signals += 1
         sell.append('VWAP')
-    
-    if 'Super Buy' in buy or 'Buy' in buy and 'ADX' in buy and 'Volume_Trend' in buy:
-        return 'Intra Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
+            
+    decision = ''
+    if 'Super Buy' in buy and ('Volume_Trend' in buy or 'ADX' in buy):
+        decision = 'Intra Buy'
     elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy):
         if 'Super Buy' in buy  or 'Volume_Trend' in buy:
-            return 'Super Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
+            decision = 'Super Buy'
         
         elif 'Buy' in buy or 'Volume_Trend' in buy:
             
-            return 'Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
+            decision = 'Buy'
         else:
-            return 'Sell',buy_signals,sell_signals,hold_signal, buy,sell,hold
+            decision= 'Sell'
     else:
-        return 'Sell',buy_signals,sell_signals,hold_signal, buy,sell,hold
+        decision= 'Sell'
+    
+    return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
     '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
 
         return 'Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
@@ -318,7 +321,7 @@ predefined_symbols123 = [ "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "H
     "SHREECEM", "ADANIPORTS", "BAJAJ-AUTO", "EICHERMOT", "HDFCLIFE", "CIPLA", "NESTLEIND", "GRASIM", "VEDL",
     "BRITANNIA", "GAIL", "DABUR",  "SIEMENS", "HINDALCO", "ICICIPRULI", "SBICARD", "ABBOTINDIA",
     "PIDILITIND", "HAVELLS", "BANKBARODA", "LUPIN", "BEL", "BANDHANBNK", "TATASTEEL", "INDIGO", "MUTHOOTFIN",
-    "BATAINDIA", "BIOCON", "GLENMARK", "MANAPPURAM", "ESCORTS", "LICHSGFIN", "TORNTPHARM", "MCDOWELL-N", "AMBUJACEM",
+    "BATAINDIA", "BIOCON", "GLENMARK", "MANAPPURAM", "ESCORTS", "LICHSGFIN", "TORNTPHARM", "AMBUJACEM",
     "IOC", "IDFCFIRSTB", "JUBLFOOD", "ACC", "COLPAL",  "APOLLOHOSP", "GODREJCP", "CHOLAFIN", "PAGEIND",
     "NAUKRI", "CONCOR", "ICICIGI", "NMDC", "MFSL", "IIFL", "TATACHEM", "ASTRAL", "AUBANK", "JINDALSTEL", "BHEL",
     "GODREJPROP", "ASHOKLEY", "PNB", "CANBK", "TRENT", "SUNTV", "VOLTAS", "DALBHARAT", "METROPOLIS", "POLYCAB",
@@ -353,7 +356,7 @@ predefined_symbols1 = [
     "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
 ]
 '''predefined_symbols = [
-    "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "HINDUNILVR", "ITC", "KOTAKBANK", "SBIN", "BAJFINANCE",
+     "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "HINDUNILVR", "ITC", "KOTAKBANK", "SBIN", "BAJFINANCE",
     "BHARTIARTL",  "ASIANPAINT", "MARUTI", "DMART", "AXISBANK", "LT", "SUNPHARMA", "ADANIGREEN", "TITAN",
     "WIPRO", "ONGC", "M&M", "DIVISLAB", "HCLTECH", "ADANIENT", "BAJAJFINSV", "NTPC", "ULTRACEMCO", "TATACONSUM",
     "SBILIFE", "JSWSTEEL", "HEROMOTOCO", "INDUSINDBK", "COALINDIA", "TECHM", "BPCL", "POWERGRID", "TATAMOTORS",
@@ -426,14 +429,15 @@ def delivery(symbols_get):
             # Calculate indicators
             df = calculate_indicators(df)
             
-                                
+                                        
             
             # Determine final decision based on sentiment
             decision,buy_signals,sell_signals,hold_signal, buy,sell,hold = final_decision(df,vix)
+
             symbols_NS = symbol[:-3]
             last_Price,pChange = fetch_price_data(symbols_NS)
             
-
+            
             # Prepare data for each symbol
             symbol_data = {
                 'symbol': symbol,
