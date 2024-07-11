@@ -13,7 +13,7 @@ from ta.volatility import BollingerBands
 import json
 
 
-import os
+'''import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -23,7 +23,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 
 app = Flask(__name__)
 
@@ -271,9 +271,9 @@ def fetch_price_data(symbol):
     
     lastPrice =float(dq[symbol].get('lastPrice', 0))
     
-       
-    
-    return lastPrice
+    pChange =float(dq[symbol].get('pChange', 0))
+    pChange =round(pChange,2)
+    return lastPrice ,pChange
 
 def calculate_roc(df, window=12):
     df['ROC'] = ta.momentum.roc(df['CLOSE'], window=12)
@@ -429,7 +429,7 @@ def delivery(symbols_get):
             # Determine final decision based on sentiment
             decision,buy_signals,sell_signals,hold_signal, buy,sell,hold = final_decision(df,vix)
             symbols_NS = symbol[:-3]
-            last_Price = fetch_price_data(symbols_NS)
+            last_Price,pChange = fetch_price_data(symbols_NS)
             
 
             # Prepare data for each symbol
@@ -437,6 +437,7 @@ def delivery(symbols_get):
                 'symbol': symbol,
                 #'company_name': company_name,
                 'LTP': last_Price,
+                'pChange':pChange,
                 #'indicators_data': indicators,
                 #'sentiment': sentiment,
                 'decision': decision,
@@ -496,7 +497,8 @@ def intraday(symbols_get):
             # Determine final decision based on sentiment
             decision,buy_signals,sell_signals,hold_signal, buy,sell,hold = final_decision(df,vix)
             symbols_NS = symbol[:-3]
-            last_Price = fetch_price_data(symbols_NS)
+            last_Price ,pChange= fetch_price_data(symbols_NS)
+            
             
 
             # Prepare data for each symbol
@@ -504,6 +506,7 @@ def intraday(symbols_get):
                 'symbol': symbol,
                 #'company_name': company_name,
                 'LTP': last_Price,
+                'pChange':pChange,
                 #'indicators_data': indicators,
                 #'sentiment': sentiment,
                 'decision': decision,
@@ -585,6 +588,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
+    app.run(debug=True)
     
-    app.run(debug=True, host='0.0.0.0', port=80)
+    #app.run(debug=True, host='0.0.0.0', port=80)
