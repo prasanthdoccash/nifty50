@@ -206,15 +206,13 @@ def final_decision(df,vix):
     
     if rsi2 > 0 and 'ADX' in buy and 'Volume_Trend' in buy:
         return 'Intra Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
-    elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy) or ('VWAP' in buy and 'MACD' in buy and 'ROC' in buy and 'EMA' not in buy):
+    elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy):
         if rsi2 > 0 or 'Volume_Trend' in buy:
             return 'Super Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
-        elif rsi2 > 0 and 'Volume_Trend' in sell:
-             
-             return 'Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
+        
         else:
             
-            return 'Hold',buy_signals,sell_signals,hold_signal, buy,sell,hold
+            return 'Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
     else:
         return 'Sell',buy_signals,sell_signals,hold_signal, buy,sell,hold
     '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
@@ -241,7 +239,7 @@ def fetch_delivery_data(symbols, num):
         if num == 0:
             df = stock.history(period="90d", interval="1d") # 30d 1h identifies Stocks for delivery
         else:
-            df = stock.history(period="7d", interval="1m") # 7d 1m identifies Stocks for intraday
+            df = stock.history(period="7d", interval="5m") # 7d 1m identifies Stocks for intraday
        
         
         if not df.empty:
@@ -289,6 +287,8 @@ def calculate_vix(symb):
         
     elif vix < 0:
         vix_senti = 'Bullish'
+    else: 
+        vix_senti = 'Neutral'
     return df,vix,vix_senti
 
 
