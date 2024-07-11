@@ -14,6 +14,9 @@
         .superbuy-decision {
             background-color: rgb(83, 179, 235);
         }
+        .intrabuy-decision {
+            background-color: rgb(236, 142, 19);
+        }
         /* Add space between <td> elements */
         td {
             padding-right: 20px; /* Adjust as needed */
@@ -243,8 +246,10 @@ function checkAlerts() {
             </thead>
             <tbody>
                 {% for result in results %}
-                {% if result.decision == 'Super Buy' or result.decision == 'Intra Buy'%}
+                {% if result.decision == 'Super Buy'%}
                     <tr class="superbuy-decision">
+                {% elif result.decision == 'Intra Buy' %}
+                    <tr class="intrabuy-decision">
                 {% elif result.decision == 'Buy' %}
                     <tr class="buy-decision">
                 {% else %}
