@@ -226,7 +226,7 @@ def final_decision(df,vix):
     elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy):
         if 'Super Buy' in buy and 'STOCHASTIC' not in sell:
             decision = 'Super Buy'
-        elif 'Buy' in buy and 'STOCHASTIC' not in sell:
+        elif 'Buy' in buy or 'STOCHASTIC' not in sell:
             decision = 'Buy'
         elif ['Super Buy','Buy'] in buy and 'Volume_Trend' in buy:
             
