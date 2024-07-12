@@ -15,7 +15,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 #Start for deployment
-'''import os
+import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -25,7 +25,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)'''
+os.makedirs(cache_dir)
 #stop for deployment
 
 app = Flask(__name__)
@@ -144,9 +144,11 @@ def final_decision(df,vix):
     elif (rsi2 > 0 and roc2 > 0) or (rsi2>0 and stochastic2>0) or(roc2>0 and stochastic2>0) : #either
         
         buy.append('Buy')
-    else:
+    elif (rsi2 > 0 or roc2 > 0 or stochastic2>0):
         
         buy.append('Hold')
+    else:
+        buy.append('Sell')
     
 
     if indicators['rsi'] <= 30: #oversold
@@ -223,23 +225,23 @@ def final_decision(df,vix):
         sell.append('VWAP')
             
     decision = ''
-    if 'Super Buy' in buy and ('Volume_Trend' in buy or 'ADX' in buy):
-        decision = 'Intra Buy'
+    if 'Super Buy' in buy and 'ADX' in buy:
+        decision = 'Intra Buy' #orange
     elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy):
-        if ('Super Buy' in buy  and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell) or 'Volume_Trend' in buy:
-            decision = 'Super Buy'
-        elif ('Buy' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell)  or 'Volume_Trend' in buy:
-            decision = 'Buy'
-        elif  ('williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell)  or 'Volume_Trend' in buy:
-            decision = 'Hold' 
+        if ('Super Buy' in buy  and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell) or ('Super Buy' in buy  and 'Volume_Trend' in buy):
+            decision = 'Buy' #Blue
+        elif ('Buy' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell)  or ('Buy' in buy  and 'Volume_Trend' in buy):
+            decision = 'Watch'#Green
+        elif  ('Hold' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell):
+            decision = 'Hold' #Green
         else:
-            decision= 'Sell'
+            decision= 'Sell' #white
     else:
         decision= 'Sell'
     '''elif 'Super Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell:
         decision= 'Super Buy'
     
-    elif 'Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell:
+    elif 'Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell: 
         decision= 'Buy'
     
     elif 'Super Buy' in buy or 'Buy' in buy and 'Volume_Trend' in buy:
@@ -329,34 +331,14 @@ def calculate_vix(symb):
 
 
 # Dummy symbols data for demonstration
-predefined_symbols123 = [ "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "HINDUNILVR", "ITC", "KOTAKBANK", "SBIN", "BAJFINANCE",
-    "BHARTIARTL",  "ASIANPAINT", "MARUTI", "DMART", "AXISBANK", "LT", "SUNPHARMA", "ADANIGREEN", "TITAN",
-    "WIPRO", "ONGC", "M&M", "DIVISLAB", "HCLTECH", "ADANIENT", "BAJAJFINSV", "NTPC", "ULTRACEMCO", "TATACONSUM",
-    "SBILIFE", "JSWSTEEL", "HEROMOTOCO", "INDUSINDBK", "COALINDIA", "TECHM", "BPCL", "POWERGRID", "TATAMOTORS",
-    "SHREECEM", "ADANIPORTS", "BAJAJ-AUTO", "EICHERMOT", "HDFCLIFE", "CIPLA", "NESTLEIND", "GRASIM", "VEDL",
-    "BRITANNIA", "GAIL", "DABUR",  "SIEMENS", "HINDALCO", "ICICIPRULI", "SBICARD", "ABBOTINDIA",
-    "PIDILITIND", "HAVELLS", "BANKBARODA", "LUPIN", "BEL", "BANDHANBNK", "TATASTEEL", "INDIGO", "MUTHOOTFIN",
-    "BATAINDIA", "BIOCON", "GLENMARK", "MANAPPURAM", "ESCORTS", "LICHSGFIN", "TORNTPHARM", "AMBUJACEM",
-    "IOC", "IDFCFIRSTB", "JUBLFOOD", "ACC", "COLPAL",  "APOLLOHOSP", "GODREJCP", "CHOLAFIN", "PAGEIND",
-    "NAUKRI", "CONCOR", "ICICIGI", "NMDC", "MFSL", "IIFL", "TATACHEM", "ASTRAL", "AUBANK", "JINDALSTEL", "BHEL",
-    "GODREJPROP", "ASHOKLEY", "PNB", "CANBK", "TRENT", "SUNTV", "VOLTAS", "DALBHARAT", "METROPOLIS", "POLYCAB",
-    "PETRONET",  "BAJAJELEC", "MGL", "IGL", "MRF", "BERGEPAINT", "PIIND", "DLF", "INDHOTEL", 
-    "SRF", "SUNDARMFIN", "ZEEL", "IDBI", "INDIANB", "EXIDEIND", "AIAENG", "ALEMBICLTD", "ALKEM", "ALOKINDS",
-     "APOLLOTYRE", "ARVIND", "ASHOKA", "BALKRISIND", "BEML", "BHARATFORG", "BIOCON", "BLISSGVS",
-    "BLUEBLENDS", "BOSCHLTD",  "CANFINHOME", "CARBORUNIV", "CASTROLIND", "CESC", "CIPLA", "COROMANDEL",
-    "CROMPTON", "CUMMINSIND", "CYIENT", "DEEPAKNTR", "DHANUKA", "DRREDDY", "ECLERX", "ENDURANCE", "FDC", "FINEORG",
-    "GILLETTE", "GLAXO", "GLENMARK", "GRINDWELL", "HATSUN", "HINDCOPPER", "HINDPETRO", "HINDZINC", "HUDCO",
-    "IBULHSGFIN", "IDEA", "IGL", "IRCTC", "IRCON", "JAMNAAUTO", "JBCHEPHARM", "JKCEMENT", "JSWENERGY", "JUSTDIAL",
-    "JYOTHYLAB",  "KARURVYSYA", "KEC", "KNRCON", "KOTAKBANK", "KRBL",  "LALPATHLAB", "LICHSGFIN",
-    "LTTS", "LUXIND",  "MAHSCOOTER", "MARICO", "MCX", "METROPOLIS", "MGL",  "MPHASIS", "MRPL",
-    "NAM-INDIA", "NATCOPHARM", "NCC", "NESCO", "NETWORK18", "NIACL", "NMDC", "NOCIL", "OBEROIRLTY", "OFSS", "ONGC",
-    "ORIENTELEC", "PAGEIND", "PERSISTENT", "PFIZER", "PIDILITIND", "PIIND", "PNBHOUSING", "POLYCAB", "PRAJIND",
-    "PRESTIGE",  "RADICO", "RAIN", "RALLIS", "RAMCOCEM", "RAYMOND", "RBLBANK", "RECLTD", "REDINGTON", "RELAXO",
-    "RELIANCE", "ROUTE", "SANOFI", "SBILIFE", "SHILPAMED", "SHOPERSTOP", "SIS", "SJVN", "SKFINDIA", "SRF", "STARCEMENT",
-    "STLTECH", "SUNPHARMA", "SUNTV", "SUPRAJIT", "SYMPHONY", "TATACHEM", "TATAELXSI",  "TATACOMM",
-    "TATAMOTORS", "TATASTEEL", "TCI", "TCNSBRANDS", "TECHM", "THERMAX", "TITAN", "TORNTPOWER", "TRENT", "TVSMOTOR",
-    "UBL", "UFLEX", "ULTRACEMCO", "UNIONBANK", "UPL", "VARROC", "VBL", "VEDL", "VINATIORGA", "VOLTAS", 
-    "WELCORP",  "WHIRLPOOL", "WIPRO", "WOCKPHARMA", "YESBANK", "ZEEL", "ZENSARTECH"
+predefined_symbols123 = [ "ADANIENT","ADANIPORTS", "APOLLOHOSP","ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "BAJAJFINSV",
+    "BAJFINANCE","BRITANNIA", "BHARTIARTL", "BPCL", "CIPLA", "COALINDIA", "DIVISLAB",
+    "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH","HDFCBANK",
+    "HDFCLIFE", "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK",
+    "INDUSINDBK", "INFY", "IOC", "ITC", "JSWSTEEL", "KOTAKBANK", "LTIM","LT",
+    "M&M", "MARUTI", "NESTLEIND", "NTPC", "ONGC", "POWERGRID", "RELIANCE",
+    "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATAMOTORS", "TATASTEEL",
+    "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
    ]
 
 predefined_symbols = [f"{symbol}.NS" for symbol in predefined_symbols123]
@@ -609,6 +591,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
     
-    #app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True, host='0.0.0.0', port=80)
