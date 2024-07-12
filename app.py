@@ -230,7 +230,7 @@ def final_decision(df,vix):
             decision = 'Super Buy'
         elif ('Buy' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell)  or 'Volume_Trend' in buy:
             decision = 'Buy'
-        elif  ('Hold' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell)  or 'Volume_Trend' in buy:
+        elif  ('williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell)  or 'Volume_Trend' in buy:
             decision = 'Hold' 
         else:
             decision= 'Sell'
