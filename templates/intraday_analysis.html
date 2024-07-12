@@ -29,7 +29,7 @@
         function startAutoRefresh() {
             refreshInterval = setInterval(function() {
                 location.reload();
-            }, 20000); // 120000 milliseconds = 2 minutes
+            }, 120000); // 120000 milliseconds = 2 minutes
             updateRefreshTime(); // Update timestamp immediately on start
             document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
         }
