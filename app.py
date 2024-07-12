@@ -102,10 +102,10 @@ def final_decision(df,vix):
     sell = []
     hold = []
     
-    if indicators['williams_r'] < -80: #overbought
+    if indicators['williams_r'] > -20: #overbought
         sell_signals += 1 
         sell.append('williamsR')
-    elif indicators['williams_r'] > -20: #oversold
+    elif indicators['williams_r'] < -80: #oversold
         buy.append('williamsR') 
         buy_signals += 1
     else:
@@ -226,28 +226,29 @@ def final_decision(df,vix):
     if 'Super Buy' in buy and ('Volume_Trend' in buy or 'ADX' in buy):
         decision = 'Intra Buy'
     elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy):
-        if 'Super Buy' in buy and 'STOCHASTIC' not in sell:
+        if ('Super Buy' in buy  and 'williamsR' not in sell and 'STOCHASTIC' not in sell) or 'Volume_Trend' in buy:
             decision = 'Super Buy'
-        elif 'Buy' in buy or 'STOCHASTIC' not in sell:
+        elif ('Buy' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell)  or 'Volume_Trend' in buy:
             decision = 'Buy'
-        elif ['Super Buy','Buy'] in buy or 'Volume_Trend' in buy:
-            
-            decision = 'Buy'
+        elif  ('Hold' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell)  or 'Volume_Trend' in buy:
+            decision = 'Hold' 
         else:
             decision= 'Sell'
-    elif 'Super Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell:
-        decision= 'Super Buy'
-    elif 'Super Buy' in buy and 'EMA' in buy and 'VWAP' in buy:
-        decision= 'Buy'
-    elif 'Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell:
-        decision= 'Buy'
-    elif 'Buy' in buy and 'EMA' in buy and 'VWAP' in buy:
-        decision= 'Super Buy'
-    elif ['Super Buy','Buy'] in buy and 'Volume_Trend' in buy:
-            
-        decision = 'Buy'
     else:
         decision= 'Sell'
+    '''elif 'Super Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell:
+        decision= 'Super Buy'
+    
+    elif 'Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell:
+        decision= 'Buy'
+    
+    elif 'Super Buy' in buy or 'Buy' in buy and 'Volume_Trend' in buy:
+            
+        decision = 'Buy
+        
+    else:
+        decision= 'Sell'
+        '''
     return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
     '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
 
@@ -350,7 +351,7 @@ predefined_symbols123 = [ "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "H
     "LTTS", "LUXIND",  "MAHSCOOTER", "MARICO", "MCX", "METROPOLIS", "MGL",  "MPHASIS", "MRPL",
     "NAM-INDIA", "NATCOPHARM", "NCC", "NESCO", "NETWORK18", "NIACL", "NMDC", "NOCIL", "OBEROIRLTY", "OFSS", "ONGC",
     "ORIENTELEC", "PAGEIND", "PERSISTENT", "PFIZER", "PIDILITIND", "PIIND", "PNBHOUSING", "POLYCAB", "PRAJIND",
-    "PRESTIGE", "PVR", "RADICO", "RAIN", "RALLIS", "RAMCOCEM", "RAYMOND", "RBLBANK", "RECLTD", "REDINGTON", "RELAXO",
+    "PRESTIGE",  "RADICO", "RAIN", "RALLIS", "RAMCOCEM", "RAYMOND", "RBLBANK", "RECLTD", "REDINGTON", "RELAXO",
     "RELIANCE", "ROUTE", "SANOFI", "SBILIFE", "SHILPAMED", "SHOPERSTOP", "SIS", "SJVN", "SKFINDIA", "SRF", "STARCEMENT",
     "STLTECH", "SUNPHARMA", "SUNTV", "SUPRAJIT", "SYMPHONY", "TATACHEM", "TATAELXSI",  "TATACOMM",
     "TATAMOTORS", "TATASTEEL", "TCI", "TCNSBRANDS", "TECHM", "THERMAX", "TITAN", "TORNTPOWER", "TRENT", "TVSMOTOR",
@@ -392,7 +393,7 @@ predefined_symbols1 = [
     "LTTS", "LUXIND",  "MAHSCOOTER", "MARICO", "MCX", "METROPOLIS", "MGL",  "MPHASIS", "MRPL",
     "NAM-INDIA", "NATCOPHARM", "NCC", "NESCO", "NETWORK18", "NIACL", "NMDC", "NOCIL", "OBEROIRLTY", "OFSS", "ONGC",
     "ORIENTELEC", "PAGEIND", "PERSISTENT", "PFIZER", "PIDILITIND", "PIIND", "PNBHOUSING", "POLYCAB", "PRAJIND",
-    "PRESTIGE", "PVR", "RADICO", "RAIN", "RALLIS", "RAMCOCEM", "RAYMOND", "RBLBANK", "RECLTD", "REDINGTON", "RELAXO",
+    "PRESTIGE",  "RADICO", "RAIN", "RALLIS", "RAMCOCEM", "RAYMOND", "RBLBANK", "RECLTD", "REDINGTON", "RELAXO",
     "RELIANCE", "ROUTE", "SANOFI", "SBILIFE", "SHILPAMED", "SHOPERSTOP", "SIS", "SJVN", "SKFINDIA", "SRF", "STARCEMENT",
     "STLTECH", "SUNPHARMA", "SUNTV", "SUPRAJIT", "SYMPHONY", "TATACHEM", "TATAELXSI",  "TATACOMM",
     "TATAMOTORS", "TATASTEEL", "TCI", "TCNSBRANDS", "TECHM", "THERMAX", "TITAN", "TORNTPOWER", "TRENT", "TVSMOTOR",
@@ -583,7 +584,7 @@ def show_watchlist():
     symbols = get_watchlist_symbols()
     
     results,last_refreshed,vix,vix_senti = delivery(symbols)
-    return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix, vix_senti=vix_senti)
+    return render_template('show_delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix, vix_senti=vix_senti)
 
 # Set pandas option to avoid future warnings
 pd.set_option('future.no_silent_downcasting', True)
@@ -593,7 +594,7 @@ def show_watchlist_intra():
     symbols = get_watchlist_symbols()
     
     results,last_refreshed,vix,vix_senti = intraday(symbols)
-    return render_template('intraday_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix, vix_senti=vix_senti)
+    return render_template('show_intraday_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix, vix_senti=vix_senti)
 
 
 # Function to get symbols from watchlist
