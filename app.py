@@ -15,7 +15,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 
 #Start for deployment
-import os
+'''import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -25,7 +25,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 #stop for deployment
 
 app = Flask(__name__)
@@ -226,11 +226,11 @@ def final_decision(df,vix):
     if 'Super Buy' in buy and ('Volume_Trend' in buy or 'ADX' in buy):
         decision = 'Intra Buy'
     elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy):
-        if ('Super Buy' in buy  and 'williamsR' not in sell and 'STOCHASTIC' not in sell) or 'Volume_Trend' in buy:
+        if ('Super Buy' in buy  and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell) or 'Volume_Trend' in buy:
             decision = 'Super Buy'
-        elif ('Buy' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell)  or 'Volume_Trend' in buy:
+        elif ('Buy' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell)  or 'Volume_Trend' in buy:
             decision = 'Buy'
-        elif  ('Hold' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell)  or 'Volume_Trend' in buy:
+        elif  ('Hold' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell)  or 'Volume_Trend' in buy:
             decision = 'Hold' 
         else:
             decision= 'Sell'
@@ -609,6 +609,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
+    app.run(debug=True)
     
-    app.run(debug=True, host='0.0.0.0', port=80)
+    #app.run(debug=True, host='0.0.0.0', port=80)
