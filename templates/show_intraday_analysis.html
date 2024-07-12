@@ -219,8 +219,10 @@ function checkAlerts() {
     <div class="container">
         <h1>Intraday Analysis</h1>
         <p>Last Refreshed: {{ last_refreshed }}</p>
-        <h5><b>Important Indicators:</b> EMA , VWAP, MACD, williamsR, ROC - Should be in BUY</h5>
-        <h6><b>Volume Trends:</b> In BUY</h6>
+        <h5><b>Important Indicators:</b> </h5>
+        <h6><b>Buy:</b> When in Orange or Blue
+        <h6><b>Watch/Hold:</b> When in Green</h6>
+        <h6><b>Sell:</b> When in White</h6>
         <table border="1">
             <thead>
                 <tr>
@@ -240,11 +242,11 @@ function checkAlerts() {
             </thead>
             <tbody>
                 {% for result in results %}
-                {% if result.decision == 'Super Buy'%}
+                {% if result.decision == 'Buy'%}
                     <tr class="superbuy-decision">
                 {% elif result.decision == 'Intra Buy' %}
                     <tr class="intrabuy-decision">
-                {% elif result.decision == 'Buy' %}
+                {% elif result.decision == 'Watch' or result.decision == 'Hold' %}
                     <tr class="buy-decision">
                 {% else %}
                     <tr>
