@@ -11,6 +11,8 @@ from ta.momentum import RSIIndicator, StochasticOscillator
 from ta.trend import MACD, EMAIndicator, SMAIndicator, ADXIndicator
 from ta.volatility import BollingerBands
 import json
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
 
 #Start for deployment
 import os
