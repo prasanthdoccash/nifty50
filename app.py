@@ -12,7 +12,7 @@ from ta.trend import MACD, EMAIndicator, SMAIndicator, ADXIndicator
 from ta.volatility import BollingerBands
 import json
 
-
+#Start for deployment
 import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
@@ -24,6 +24,7 @@ if os.path.exists(cache_dir):
 
 # Now create the directory
 os.makedirs(cache_dir)
+#stop for deployment
 
 app = Flask(__name__)
 
@@ -226,17 +227,18 @@ def final_decision(df,vix):
         if 'Super Buy' in buy and 'MACD' in buy and 'STOCHASTIC' in ['buy' or 'hold']:
             decision = 'Super Buy'
         
-        elif 'Super Buy' in buy and 'Volume_Trend' in buy:
+        elif ['Super Buy','Buy'] in buy and 'Volume_Trend' in buy:
             
             decision = 'Buy'
-        elif 'Buy' in buy and 'Volume_Trend' in buy:
-            decision = 'Buy'
-
         else:
             decision= 'Sell'
+    elif 'Super Buy' in buy and 'MACD' in buy and 'STOCHASTIC' in ['buy' or 'hold']:
+        decision= 'Super Buy'
+    elif ['Super Buy','Buy'] in buy and 'Volume_Trend' in buy:
+            
+        decision = 'Buy'
     else:
         decision= 'Sell'
-    
     return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
     '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
 
