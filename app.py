@@ -236,6 +236,8 @@ def final_decision(df,vix):
             decision = 'Hold' #Green
         else:
             decision= 'Sell' #white
+    elif ('Buy' in buy or 'Super Buy' in buy) and 'VWAP' in buy and 'ROC' in buy and ( 'EMA' in buy or 'MACD' in buy):
+        decision = 'Buy'#Green
     else:
         decision= 'Sell'
     '''elif 'Super Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell:
