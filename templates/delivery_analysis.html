@@ -244,6 +244,7 @@ function checkAlerts() {
                     <th>Buy</th>
                     <th>Sell</th>
                     <th>Hold</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -269,6 +270,13 @@ function checkAlerts() {
                     <td>{{ result.buy }}</td>
                     <td>{{ result.sell }}</td>
                     <td>{{ result.hold }}</td>
+                    <td>
+                        <!-- Add form for the button -->
+                        <form action="/analysis/{{ result.symbol }}" method="get">
+                            <button type="submit" class="btn btn-primary">View Analysis</button>
+                        </form>
+                    </td>
+                        
                 </tr>
                 {% endfor %}
             </tbody>
