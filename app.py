@@ -463,7 +463,13 @@ def delivery(symbols_get):
             continue
     
     return results,last_refreshed,vix,vix_senti
+@app.route('/analysis/<symbol>', methods=['GET'])
+def view_stock_analysis(symbol):
+    # Remove the '.NS' from the symbol if it exists
+    trimmed_symbol = symbol.split('.')[0]  # This will keep everything before the '.' (e.g., RELIANCE)
     
+    # Pass the trimmed symbol to index1.html
+    return render_template('index1.html', stock_symbol=trimmed_symbol)
     
 @app.route('/delivery')
 def delivery1():
