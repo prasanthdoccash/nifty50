@@ -132,10 +132,7 @@ def final_decision(df,vix):
     buy = []
     sell = []
     hold = []
-    #print("df['pe']",df['pe'].iloc[-1])
-    #print("df['eps']",df['eps'].iloc[-1])
-    #print("average",df['average_pe'].iloc[-1])
-    #print("symf",df['symbol'])
+    
     if df['pe'].iloc[-1] != 0:
 
         if df['pe'].iloc[-1] <= df['average_pe'].iloc[-1]:
@@ -295,6 +292,8 @@ def final_decision(df,vix):
 
     if decision == 'Sell':
         if ('Buy' in buy or 'Super Buy' in buy and  'PE' in buy):
+            decision = 'Buy'#Green
+        elif ('Super Buy' in buy):
             decision = 'Watch'#Green
    
 
@@ -331,7 +330,7 @@ def fetch_delivery_data(symbols, num1):
    
     all_data = {}
     for symbol in symbols:
-        #print(symbol)
+        
         stock = yf.Ticker(symbol)
         if num1 == 0:
             df = stock.history(period="1y", interval="1d") # 30d 1h identifies Stocks for delivery
