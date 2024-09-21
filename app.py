@@ -43,7 +43,7 @@ def calculate_indicators(df,num2=5):
 
     # Calculate average historical P/E ratio
     df['average_pe'] = np.mean(df['historical_pe'])
-    
+    #print("df['average_pe']",df['average_pe'])
     
 
     
@@ -132,14 +132,18 @@ def final_decision(df,vix):
     buy = []
     sell = []
     hold = []
+    print("df['pe']",df['pe'].iloc[-1])
+    #print("df['eps']",df['eps'].iloc[-1])
+    #print("average",df['average_pe'].iloc[-1])
+    #print("symf",df['symbol'])
+    if df['pe'].iloc[-1] != 0:
 
-   
-    if df['pe'].iloc[-1] <= df['average_pe'].iloc[-1]:
-        buy_signals += 1
-        buy.append('PE')
-    else:
-        sell_signals += 1
-        sell.append('PE')
+        if df['pe'].iloc[-1] <= df['average_pe'].iloc[-1]:
+            buy_signals += 1
+            buy.append('PE')
+        else:
+            sell_signals += 1
+            sell.append('PE')
 
     if df['signal'].iloc[-1] == True:
         buy_signals += 1
@@ -327,7 +331,7 @@ def fetch_delivery_data(symbols, num1):
    
     all_data = {}
     for symbol in symbols:
-        
+        print(symbol)
         stock = yf.Ticker(symbol)
         if num1 == 0:
             df = stock.history(period="1y", interval="1d") # 30d 1h identifies Stocks for delivery
@@ -336,11 +340,14 @@ def fetch_delivery_data(symbols, num1):
         
         df['pe'] = stock.info.get('trailingPE')
         df['eps'] = stock.info.get('trailingEps')
-        if df['pe']  is None:
-            df['pe'] =0
-        if df['eps']  is None:
-            df['eps'] = 0
 
+        checkpe = df['pe'].iloc[-1]
+        checkeps = df['eps'].iloc[-1]
+        if checkpe is None:
+            df['pe'] =0
+        if checkeps is None:
+            df['eps'] = 0
+        
         if not df.empty:
             all_data[symbol] = df
     
