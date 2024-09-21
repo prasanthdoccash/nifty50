@@ -4,7 +4,7 @@ from jugaad_data.nse import NSELive,stock_df
 import pandas as pd
 import ta
 from datetime import date, timedelta
-
+import numpy as np
 import yfinance as yf
 import pandas as pd
 from ta.momentum import RSIIndicator, StochasticOscillator
@@ -38,9 +38,14 @@ def calculate_indicators(df,num2=5):
     # else:
         df = df[df.index.minute % 5 == 0]
      
+    # Calculate historical P/E ratios using price and EPS
+    df['historical_pe'] = df['Close'] / df['eps']
 
+    # Calculate average historical P/E ratio
+    df['average_pe'] = np.mean(df['historical_pe'])
     
     
+
     
     df['rsi'] = RSIIndicator(df['Close'], window=14).rsi()
     
@@ -65,7 +70,7 @@ def calculate_indicators(df,num2=5):
     #df['support_2'] = df['pivot_point'] - (df['High'] - df['Low'])
     #df['resistance_2'] = df['pivot_point'] + (df['High'] - df['Low'])
 
-
+    
     # Determine buy signals
     df['adx'] = (df['adx1'] > 20) & (df['+DI'] > df['-DI']) & (df['+DI'].shift(1) <= df['-DI'].shift(1))
     
@@ -127,6 +132,14 @@ def final_decision(df,vix):
     buy = []
     sell = []
     hold = []
+
+   
+    if df['pe'].iloc[-1] <= df['average_pe'].iloc[-1]:
+        buy_signals += 1
+        buy.append('PE')
+    else:
+        sell_signals += 1
+        sell.append('PE')
 
     if df['signal'].iloc[-1] == True:
         buy_signals += 1
@@ -277,7 +290,7 @@ def final_decision(df,vix):
         decision= 'Sell'
 
     if decision == 'Sell':
-        if ('Buy' in buy or 'Super Buy' in buy):
+        if ('Buy' in buy or 'Super Buy' in buy and  'PE' in buy):
             decision = 'Watch'#Green
    
 
@@ -320,7 +333,9 @@ def fetch_delivery_data(symbols, num1):
             df = stock.history(period="1y", interval="1d") # 30d 1h identifies Stocks for delivery
         else:
             df = stock.history(period="30d", interval="5m") # 7d 1m identifies Stocks for intraday
-       
+        
+        df['pe'] = stock.info.get('trailingPE')
+        df['eps'] = stock.info.get('trailingEps')
         
         if not df.empty:
             all_data[symbol] = df
@@ -374,7 +389,7 @@ def calculate_vix(symb):
 
 
 # Dummy symbols data for demonstration
-predefined_symbols123 = [   "ADANIENT","ADANIPORTS", "APOLLOHOSP","ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "BAJAJFINSV",
+predefined_symbols123 = [ "ADANIENT","ADANIPORTS", "APOLLOHOSP","ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "BAJAJFINSV",
     "BAJFINANCE","BRITANNIA", "BHARTIARTL", "BPCL", "CIPLA", "COALINDIA", "DIVISLAB",
     "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH","HDFCBANK",
     "HDFCLIFE", "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK",
@@ -461,6 +476,7 @@ def delivery(symbols_get):
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     data = fetch_delivery_data(symbols,0)
+    
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
     now = 0
