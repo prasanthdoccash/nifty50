@@ -280,7 +280,7 @@ def fetch_delivery_data(symbols, num):
         
         stock = yf.Ticker(symbol)
         if num == 0:
-            df = stock.history(period="1y", interval="1d") # 30d 1h identifies Stocks for delivery
+            df = stock.history(period="30d", interval="1d") # 30d 1h identifies Stocks for delivery
         else:
             df = stock.history(period="60d", interval="15m") # 7d 1m identifies Stocks for intraday
        
