@@ -336,7 +336,11 @@ def fetch_delivery_data(symbols, num1):
         
         df['pe'] = stock.info.get('trailingPE')
         df['eps'] = stock.info.get('trailingEps')
-        
+        if df['pe']  is None:
+            df['pe'] =0
+        if df['eps']  is None:
+            df['eps'] = 0
+
         if not df.empty:
             all_data[symbol] = df
     
