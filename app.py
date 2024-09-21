@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, jsonify
 import datetime as dt
 from jugaad_data.nse import NSELive,stock_df
 import pandas as pd
 import ta
 from datetime import date, timedelta
-from flask import Flask, render_template, request, jsonify
+
 import yfinance as yf
 import pandas as pd
 from ta.momentum import RSIIndicator, StochasticOscillator
@@ -13,7 +13,7 @@ from ta.volatility import BollingerBands
 import json
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
+warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
 #Start for deployment
 import os
 import shutil
@@ -31,7 +31,17 @@ os.makedirs(cache_dir)
 app = Flask(__name__)
 
 
-def calculate_indicators(df):
+def calculate_indicators(df,num2=5):
+    
+    if num2 == 5: #delivery
+    #     df =  df[(df.index.hour == 0) & (df.index.minute == 0)] 
+    # else:
+        df = df[df.index.minute % 5 == 0]
+     
+
+    
+    
+    
     df['rsi'] = RSIIndicator(df['Close'], window=14).rsi()
     
     macd = MACD(df['Close'], window_slow=26, window_fast=12, window_sign=9)
@@ -48,6 +58,13 @@ def calculate_indicators(df):
     df['adx1'] = ta.trend.adx(df['High'], df['Low'], df['Close'], window=14)
     df['+DI'] = ta.trend.adx_pos(df['High'], df['Low'], df['Close'], window=14)
     df['-DI'] = ta.trend.adx_neg(df['High'], df['Low'], df['Close'], window=14)
+
+    df['pivot_point'] = (df['High'] + df['Low'] + df['Close']) / 3
+    df['support'] = (2 * df['pivot_point']) - df['High']
+    df['resistance'] = (2 * df['pivot_point']) - df['Low']
+    #df['support_2'] = df['pivot_point'] - (df['High'] - df['Low'])
+    #df['resistance_2'] = df['pivot_point'] + (df['High'] - df['Low'])
+
 
     # Determine buy signals
     df['adx'] = (df['adx1'] > 20) & (df['+DI'] > df['-DI']) & (df['+DI'].shift(1) <= df['-DI'].shift(1))
@@ -94,6 +111,15 @@ def final_decision(df,vix):
         'williams_r': last_row['williams_r']
     }
 
+    
+
+    condition_1 = df['Close'].shift(1) > df['vwap'].shift(1)
+    condition_2 = df['Open'].shift(1) < df['vwap'].shift(1)
+    condition_3 = df['Close'] > df['High'].shift(1)
+    
+    # Combine conditions to create a signal column (e.g., True if all conditions are met)
+    df['signal'] = condition_1.iloc[-1] & condition_2.iloc[-1] & condition_3.iloc[-1]
+    
     buy_signals = 0
     sell_signals = 0
     hold_signal = 0
@@ -101,7 +127,14 @@ def final_decision(df,vix):
     buy = []
     sell = []
     hold = []
-    
+
+    if df['signal'].iloc[-1] == True:
+        buy_signals += 1
+        buy.append('VWAP')
+    else:
+        sell_signals += 1
+        sell.append('VWAP')
+
     if indicators['williams_r'] > -20: #overbought
         sell_signals += 1 
         sell.append('williamsR')
@@ -121,7 +154,7 @@ def final_decision(df,vix):
     else:
         hold_signal +=1
         hold.append('ROC')
-
+    
     
     if indicators['Volume_Trend'] > df['Volume_Trend'].shift(1).iloc[-1]: #increasing
         buy.append('Volume_Trend')
@@ -217,29 +250,37 @@ def final_decision(df,vix):
     
 
     # VWAP
-    if last_row['Close'] > indicators['vwap']:
+    '''if last_row['Close'] > indicators['vwap']:
         buy_signals += 1
         buy.append('VWAP')
     else:
         sell_signals += 1
-        sell.append('VWAP')
+        sell.append('VWAP')'''
             
     decision = ''
-    if 'Super Buy' in buy and 'ADX' in buy:
+    
+    if 'Super Buy' in buy and 'ADX' in buy and 'VWAP' in buy:
         decision = 'Intra Buy' #orange
-    elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy):
+    elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy ):
         if ('Super Buy' in buy  and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell) or ('Super Buy' in buy  and 'Volume_Trend' in buy):
             decision = 'Buy' #Blue
-        elif ('Buy' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell)  or ('Buy' in buy  and 'Volume_Trend' in buy):
+        elif ('Buy' in buy or 'Super Buy' in buy)  or ('Buy' in buy  and 'Volume_Trend' in buy):
             decision = 'Watch'#Green
         elif  ('Hold' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell):
             decision = 'Hold' #Green
+         
         else:
             decision= 'Sell' #white
     elif ('Buy' in buy or 'Super Buy' in buy) and 'VWAP' in buy and 'ROC' in buy and ( 'EMA' in buy or 'MACD' in buy):
         decision = 'Buy'#Green
     else:
         decision= 'Sell'
+
+    if decision == 'Sell':
+        if ('Buy' in buy or 'Super Buy' in buy):
+            decision = 'Watch'#Green
+   
+
     '''elif 'Super Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell:
         decision= 'Super Buy'
     
@@ -252,10 +293,6 @@ def final_decision(df,vix):
         
     else:
         decision= 'Sell'
-    if decision == 'Sell':
-        if ('Buy' in buy or 'Super Buy' in buy):
-            decision = 'Watch'#Green
-        
         '''
     return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
     '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
@@ -273,16 +310,16 @@ def final_decision(df,vix):
 
 ###########################################################################
 nse = NSELive()
-def fetch_delivery_data(symbols, num):
-    
+def fetch_delivery_data(symbols, num1):
+   
     all_data = {}
     for symbol in symbols:
         
         stock = yf.Ticker(symbol)
-        if num == 0:
-            df = stock.history(period="30d", interval="1d") # 30d 1h identifies Stocks for delivery
+        if num1 == 0:
+            df = stock.history(period="1y", interval="1d") # 30d 1h identifies Stocks for delivery
         else:
-            df = stock.history(period="60d", interval="15m") # 7d 1m identifies Stocks for intraday
+            df = stock.history(period="30d", interval="5m") # 7d 1m identifies Stocks for intraday
        
         
         if not df.empty:
@@ -337,7 +374,7 @@ def calculate_vix(symb):
 
 
 # Dummy symbols data for demonstration
-predefined_symbols123 = [  "ADANIENT","ADANIPORTS", "APOLLOHOSP","ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "BAJAJFINSV",
+predefined_symbols123 = [   "ADANIENT","ADANIPORTS", "APOLLOHOSP","ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "BAJAJFINSV",
     "BAJFINANCE","BRITANNIA", "BHARTIARTL", "BPCL", "CIPLA", "COALINDIA", "DIVISLAB",
     "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH","HDFCBANK",
     "HDFCLIFE", "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK",
@@ -426,13 +463,18 @@ def delivery(symbols_get):
     data = fetch_delivery_data(symbols,0)
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
-    
+    now = 0
     for symbol, df in data.items():
         try:
             # Calculate indicators
-            df = calculate_indicators(df)
             
-                                        
+            df = calculate_indicators(df,now)
+
+            target = df['resistance'].iloc[-1]
+            target=round(target,2)
+            stoploss = df['support'].iloc[-1]
+            stoploss=round(stoploss,2)
+                                 
             
             # Determine final decision based on sentiment
             decision,buy_signals,sell_signals,hold_signal, buy,sell,hold = final_decision(df,vix)
@@ -450,7 +492,8 @@ def delivery(symbols_get):
                 #'indicators_data': indicators,
                 #'sentiment': sentiment,
                 'decision': decision,
-                #'price_target': target,
+                'price_target': target,
+                'stoploss':stoploss,
                 'buy_signals':buy_signals,
                 'sell_signals':sell_signals,
                 'hold_signal':hold_signal,
@@ -467,6 +510,7 @@ def delivery(symbols_get):
             continue
     
     return results,last_refreshed,vix,vix_senti
+
 @app.route('/analysis/<symbol>', methods=['GET'])
 def view_stock_analysis(symbol):
     # Remove the '.NS' from the symbol if it exists
@@ -501,11 +545,12 @@ def intraday(symbols_get):
     data = fetch_delivery_data(symbols,1)
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
-    
+    new=5
     for symbol, df in data.items():
         try:
             # Calculate indicators
-            df = calculate_indicators(df)
+            
+            df = calculate_indicators(df,new)
             
                                 
             
@@ -547,7 +592,7 @@ def intraday(symbols_get):
 @app.route('/intraday')
 def intraday1():
     symb = ''
-    results,last_refreshed,vix,vix_senti = delivery(symb)
+    results,last_refreshed,vix,vix_senti = intraday(symb)
     
     return render_template('intraday_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
    
