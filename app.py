@@ -132,7 +132,7 @@ def final_decision(df,vix):
     buy = []
     sell = []
     hold = []
-    print("df['pe']",df['pe'].iloc[-1])
+    #print("df['pe']",df['pe'].iloc[-1])
     #print("df['eps']",df['eps'].iloc[-1])
     #print("average",df['average_pe'].iloc[-1])
     #print("symf",df['symbol'])
@@ -331,7 +331,7 @@ def fetch_delivery_data(symbols, num1):
    
     all_data = {}
     for symbol in symbols:
-        print(symbol)
+        #print(symbol)
         stock = yf.Ticker(symbol)
         if num1 == 0:
             df = stock.history(period="1y", interval="1d") # 30d 1h identifies Stocks for delivery
