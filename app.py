@@ -255,8 +255,7 @@ def final_decision(df,vix):
     if decision == 'Sell':
         if ('Buy' in buy or 'Super Buy' in buy):
             decision = 'Watch'#Green
-        endif
-    endif
+        
         '''
     return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
     '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
