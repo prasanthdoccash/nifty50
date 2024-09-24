@@ -293,6 +293,7 @@ def final_decision(df,vix):
     if decision == 'Sell':
         if ('Buy' in buy or 'Super Buy' in buy or  'PE' in buy):
             decision = 'Buy'#Green
+       
    
 
     '''elif 'Super Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell:
