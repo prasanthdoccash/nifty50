@@ -14,11 +14,11 @@
         .superbuy-decision {
             background-color: rgb(83, 179, 235);
         }
-        .stoploss-decision {
-            background-color: rgb(236, 142, 19);
-        }
         .intrabuy-decision {
             background-color: rgb(236, 142, 19);
+        }
+        .stoploss-decision {
+            background-color: rgb(228, 10, 10);
         }
         /* Add space between <td> elements */
         td {
@@ -190,7 +190,7 @@ function checkAlerts() {
                     <a class="nav-link" href="/input_symbol">Search</a>
                 </li>
                 <li class="nav-item active">
-                    <a class="nav-link" href="/delivery">Delivery</a>
+                    <a class="nav-link" href="/delivery">Stock</a>
                 </li>
                 <li class="nav-item active">
                     <a class="nav-link" href="/intraday">Intraday</a>
@@ -239,9 +239,10 @@ function checkAlerts() {
                     <th>Symbol</th>
                     <th>LTP</th>
                     <th>Change %</th>
-                    <th>Buy Signals</th>
-                    <th>Sell Signals</th>
-                    <th>Hold Signals</th>
+                    <th>Target</th>
+                    <th>Stoploss</th>
+                    
+                   
                     <th>Final Decision</th>
                     
                     <th>Buy</th>
@@ -252,6 +253,7 @@ function checkAlerts() {
             </thead>
             <tbody>
                 {% for result in results %}
+                
                 {% if result.LTP <= result.stoploss %}
                     <tr class="stoploss-decision">
                 {% elif result.decision == 'Buy'%}
@@ -263,13 +265,14 @@ function checkAlerts() {
                 {% else %}
                     <tr>
                 {% endif %}
+                
                     <td><input type="checkbox" name="watchlist" value="{{ result.symbol }}"></td>
                     <td>{{ result.symbol }}</td>
                     <td>{{ result.LTP }}</td>
                     <td>{{ result.pChange }}</td>
-                    <td>{{ result.buy_signals }}</td>
-                    <td>{{ result.sell_signals }}</td>
-                    <td>{{ result.hold_signal }}</td>
+                    <td>{{ result.price_target }}</td>
+                    <td>{{ result.stoploss }}</td>
+                    
                     <td>{{ result.decision }}</td>
                     
                     <td>{{ result.buy }}</td>
@@ -281,7 +284,6 @@ function checkAlerts() {
                             <button type="submit" class="btn btn-primary">Analyze</button>
                         </form>
                     </td>
-                        
                 </tr>
                 {% endfor %}
             </tbody>
