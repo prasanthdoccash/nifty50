@@ -273,7 +273,7 @@ def final_decision(df,vix):
             
     decision = ''
     
-    if ('Super Buy' in buy and 'ADX' in buy and 'VWAP' in buy) or ('Buy' in buy or 'Super Buy' in buy and 'PE' in buy):
+    if ('Super Buy' in buy and 'ADX' in buy and 'VWAP' in buy) or (('Buy' in buy or 'Super Buy' in buy) and 'PE' in buy):
         decision = 'Intra Buy' #orange
     elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy ):
         if ('Super Buy' in buy  and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell) or ('Super Buy' in buy  and 'Volume_Trend' in buy):
