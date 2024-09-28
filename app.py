@@ -6,7 +6,6 @@ import ta
 from datetime import date, timedelta
 import numpy as np
 import yfinance as yf
-import pandas as pd
 from ta.momentum import RSIIndicator, StochasticOscillator
 from ta.trend import MACD, EMAIndicator, SMAIndicator, ADXIndicator
 from ta.volatility import BollingerBands
@@ -14,6 +13,7 @@ import json
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
+
 #Start for deployment
 import os
 import shutil
@@ -295,33 +295,8 @@ def final_decision(df,vix):
             decision = 'Buy'#Green
        
    
-
-    '''elif 'Super Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell:
-        decision= 'Super Buy'
-    
-    elif 'Buy' in buy and 'MACD' in buy and 'STOCHASTIC' not in sell and 'williamsR' not in sell: 
-        decision= 'Buy'
-    
-    elif 'Super Buy' in buy or 'Buy' in buy and 'Volume_Trend' in buy:
-            
-        decision = 'Buy
-        
-    else:
-        decision= 'Sell'
-        '''
     return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
-    '''if buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal) and sell_signals ==0:
-
-        return 'Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
-    elif buy_signals > sell_signals and buy_signals > (sell_signals +hold_signal):
-
-        return 'Super Buy',buy_signals,sell_signals,hold_signal, buy,sell,hold
-    elif sell_signals > buy_signals:
-        return 'Sell',buy_signals,sell_signals,hold_signal, buy,sell,hold
-    else:
-        return 'Hold',buy_signals,sell_signals,hold_signal, buy,sell,hold
-   
-    #if result.decision == 'Buy' and (result.buy_signals >0 and result.sell_signals ==0)'''
+    
 
 ###########################################################################
 nse = NSELive()
@@ -408,19 +383,11 @@ predefined_symbols123 = [  "ADANIENT","ADANIPORTS", "APOLLOHOSP","ASIANPAINT", "
     "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATAMOTORS", "TATASTEEL",
     "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
    ]
+predefined_symbols_s = ["360ONE.NS", "AARTIIND.NS", "AAVAS.NS", "ACE.NS", "AETHER.NS", "AFFLE.NS",     "APLLTD.NS", "ALKYLAMINE.NS", "ALLCARGO.NS", "ALOKINDS.NS", "ARE&M.NS", "AMBER.NS",     "ANANDRATHI.NS", "ANGELONE.NS", "ANURAS.NS", "APARINDS.NS", "APTUS.NS", "ACI.NS",     "ASAHIINDIA.NS", "ASTERDM.NS", "ASTRAZEN.NS", "AVANTIFEED.NS", "BEML.NS", "BLS.NS",     "BALAMINES.NS", "BALRAMCHIN.NS", "BIKAJI.NS", "BIRLACORPN.NS", "BSOFT.NS", "BLUEDART.NS",     "BLUESTARCO.NS", "BBTC.NS", "BORORENEW.NS", "BRIGADE.NS", "MAPMYINDIA.NS", "CCL.NS",     "CESC.NS", "CIEINDIA.NS", "CSBBANK.NS", "CAMPUS.NS", "CANFINHOME.NS", "CAPLIPOINT.NS",     "CGCL.NS", "CASTROLIND.NS", "CEATLTD.NS", "CELLO.NS", "CENTRALBK.NS", "CDSL.NS",     "CENTURYPLY.NS", "CENTURYTEX.NS", "CERA.NS", "CHALET.NS", "CHAMBLFERT.NS", "CHEMPLASTS.NS",     "CHENNPETRO.NS", "CHOLAHLDNG.NS", "CUB.NS", "CLEAN.NS", "COCHINSHIP.NS", "CAMS.NS",     "CONCORDBIO.NS", "CRAFTSMAN.NS", "CREDITACC.NS", "CROMPTON.NS", "CYIENT.NS", "DCMSHRIRAM.NS",     "DOMS.NS", "DATAPATTNS.NS", "DEEPAKFERT.NS", "EIDPARRY.NS", "EIHOTEL.NS", "EPL.NS",     "EASEMYTRIP.NS", "ELECON.NS", "ELGIEQUIP.NS", "ENGINERSIN.NS", "EQUITASBNK.NS", "ERIS.NS",     "EXIDEIND.NS", "FDC.NS", "FINEORG.NS", "FINCABLES.NS", "FINPIPE.NS", "FSL.NS", "FIVESTAR.NS",     "GMMPFAUDLR.NS", "GRSE.NS", "GILLETTE.NS", "GLS.NS", "GLENMARK.NS", "MEDANTA.NS", "GPIL.NS",     "GODFRYPHLP.NS", "GRANULES.NS", "GRAPHITE.NS", "GESHIP.NS", "GAEL.NS", "GMDCLTD.NS",     "GNFC.NS", "GPPL.NS", "GSFC.NS", "GSPL.NS", "HEG.NS", "HFCL.NS",     "HAPPSTMNDS.NS", "HAPPYFORGE.NS", "HSCL.NS", "HINDCOPPER.NS", "POWERINDIA.NS", "HOMEFIRST.NS",     "HONASA.NS", "HUDCO.NS", "IDFC.NS", "IIFL.NS", "IRB.NS", "IRCON.NS", "ITI.NS",     "INDIACEM.NS", "INDIAMART.NS", "IEX.NS", "IOB.NS", "INDIGOPNTS.NS", "INOXWIND.NS", "INTELLECT.NS",     "JBCHEPHARM.NS", "JBMA.NS", "JKLAKSHMI.NS", "JKPAPER.NS", "JMFINANCIL.NS", "JAIBALAJI.NS",     "J&KBANK.NS", "JINDALSAW.NS", "JUBLINGREA.NS", "JUBLPHARMA.NS", "JWL.NS", "JUSTDIAL.NS",     "JYOTHYLAB.NS", "KNRCON.NS", "KRBL.NS", "KSB.NS", "KPIL.NS", "KARURVYSYA.NS", "KAYNES.NS",     "KEC.NS", "KFINTECH.NS", "KIMS.NS", "LATENTVIEW.NS", "LXCHEM.NS", "LEMONTREE.NS", "MMTC.NS",     "MTARTECH.NS", "MGL.NS", "MAHSEAMLES.NS", "MHRIL.NS", "MAHLIFE.NS", "MANAPPURAM.NS",     "MRPL.NS", "MASTEK.NS", "MEDPLUS.NS", "METROPOLIS.NS", "MINDACORP.NS", "MOTILALOFS.NS",     "MCX.NS", "NATCOPHARM.NS", "NBCC.NS", "NCC.NS", "NLCINDIA.NS", "NSLNISP.NS", "NH.NS",     "NATIONALUM.NS", "NAVINFLUOR.NS", "NETWORK18.NS", "NAM-INDIA.NS", "NUVAMA.NS", "NUVOCO.NS",     "OLECTRA.NS", "PCBL.NS", "PNBHOUSING.NS", "PNCINFRA.NS", "PVRINOX.NS", "PPLPHARMA.NS",     "POLYMED.NS", "PRAJIND.NS", "PRINCEPIPE.NS", "PRSMJOHNSN.NS", "QUESS.NS", "RRKABEL.NS",     "RBLBANK.NS", "RHIM.NS", "RITES.NS", "RADICO.NS", "RAILTEL.NS", "RAINBOW.NS",     "RAJESHEXPO.NS", "RKFORGE.NS", "RCF.NS", "RATNAMANI.NS", "RTNINDIA.NS", "RAYMOND.NS",     "REDINGTON.NS", "RBA.NS", "ROUTE.NS", "SBFC.NS", "SAFARI.NS", "SAMMAANCAP.NS",     "SANOFI.NS", "SAPPHIRE.NS", "SAREGAMA.NS", "SCHNEIDER.NS", "RENUKA.NS", "SHYAMMETL.NS",     "SIGNATURE.NS", "SOBHA.NS", "SONATSOFTW.NS", "SWSOLAR.NS", "STLTECH.NS", "SPARC.NS",     "SUNTECK.NS", "SUVENPHAR.NS", "SWANENERGY.NS", "SYRMA.NS", "TV18BRDCST.NS", "TVSSCS.NS",     "TMB.NS", "TANLA.NS", "TATAINVEST.NS", "TTML.NS", "TEJASNET.NS", "TITAGARH.NS",     "TRIDENT.NS", "TRIVENI.NS", "TRITURBINE.NS", "UCOBANK.NS", "UTIAMC.NS", "UJJIVANSFB.NS",     "USHAMART.NS", "VGUARD.NS", "VIPIND.NS", "VAIBHAVGBL.NS", "VTL.NS", "VARROC.NS",     "VIJAYA.NS", "WELCORP.NS", "WELSPUNLIV.NS", "WESTLIFE.NS", "WHIRLPOOL.NS", "ZENSARTECH.NS",     "ECLERX.NS"]
 
 predefined_symbols = [f"{symbol}.NS" for symbol in predefined_symbols123]
-predefined_symbols1 = [
-    "ADANIENT","ADANIPORTS", "APOLLOHOSP","ASIANPAINT", "AXISBANK", "BAJAJ-AUTO", "BAJAJFINSV",
-    "BAJFINANCE","BRITANNIA", "BHARTIARTL", "BPCL", "CIPLA", "COALINDIA", "DIVISLAB",
-    "DRREDDY", "EICHERMOT", "GRASIM", "HCLTECH","HDFCBANK",
-    "HDFCLIFE", "HEROMOTOCO", "HINDALCO", "HINDUNILVR", "ICICIBANK",
-    "INDUSINDBK", "INFY", "IOC", "ITC", "JSWSTEEL", "KOTAKBANK", "LTIM","LT",
-    "M&M", "MARUTI", "NESTLEIND", "NTPC", "ONGC", "POWERGRID", "RELIANCE",
-    "SBILIFE", "SBIN", "SHREECEM", "SUNPHARMA", "TATAMOTORS", "TATASTEEL",
-    "TCS", "TECHM", "TITAN", "ULTRACEMCO", "UPL", "WIPRO"
-]
-'''predefined_symbols = [
+
+predefined_symbols_5 = [
      "RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK", "HINDUNILVR", "ITC", "KOTAKBANK", "SBIN", "BAJFINANCE",
     "BHARTIARTL",  "ASIANPAINT", "MARUTI", "DMART", "AXISBANK", "LT", "SUNPHARMA", "ADANIGREEN", "TITAN",
     "WIPRO", "ONGC", "M&M", "DIVISLAB", "HCLTECH", "ADANIENT", "BAJAJFINSV", "NTPC", "ULTRACEMCO", "TATACONSUM",
@@ -449,52 +416,10 @@ predefined_symbols1 = [
     "TATAMOTORS", "TATASTEEL", "TCI", "TCNSBRANDS", "TECHM", "THERMAX", "TITAN", "TORNTPOWER", "TRENT", "TVSMOTOR",
     "UBL", "UFLEX", "ULTRACEMCO", "UNIONBANK", "UPL", "VARROC", "VBL", "VEDL", "VINATIORGA", "VOLTAS", 
     "WELCORP",  "WHIRLPOOL", "WIPRO", "WOCKPHARMA", "YESBANK", "ZEEL", "ZENSARTECH"
-]'''
+]
+predefined_symbols_500 = [f"{symbol}.NS" for symbol in predefined_symbols_5]
+predefined_symbols_m =["ACC.NS", "APLAPOLLO.NS", "AUBANK.NS", "ABCAPITAL.NS", "ABFRL.NS", "ALKEM.NS", "APOLLOTYRE.NS", "ASHOKLEY.NS", "ASTRAL.NS", "AUROPHARMA.NS", "BSE.NS", "BALKRISIND.NS", "BANDHANBNK.NS", "BANKINDIA.NS", "MAHABANK.NS", "BDL.NS", "BHARATFORG.NS", "BHARTIHEXA.NS", "BIOCON.NS", "CGPOWER.NS", "COCHINSHIP.NS", "COFORGE.NS", "COLPAL.NS", "CONCOR.NS", "CUMMINSIND.NS", "DELHIVERY.NS", "DIXON.NS", "ESCORTS.NS", "EXIDEIND.NS", "NYKAA.NS", "FEDERALBNK.NS", "FACT.NS", "GMRINFRA.NS", "GODREJPROP.NS", "HDFCAMC.NS", "HINDPETRO.NS", "HINDZINC.NS", "HUDCO.NS", "IDBI.NS", "IDFCFIRSTB.NS", "IRB.NS", "INDIANB.NS", "INDHOTEL.NS", "IOB.NS", "IREDA.NS", "IGL.NS", "INDUSTOWER.NS", "JSWINFRA.NS", "JUBLFOOD.NS", "KPITTECH.NS", "KALYANKJIL.NS", "LTF.NS", "LICHSGFIN.NS", "LUPIN.NS", "MRF.NS", "M&MFIN.NS", "MRPL.NS", "MANKIND.NS", "MARICO.NS", "MFSL.NS", "MAXHEALTH.NS", "MAZDOCK.NS", "MPHASIS.NS", "MUTHOOTFIN.NS", "NLCINDIA.NS", "NMDC.NS", "OBEROIRLTY.NS", "OIL.NS", "PAYTM.NS", "OFSS.NS", "POLICYBZR.NS", "PIIND.NS", "PAGEIND.NS", "PATANJALI.NS", "PERSISTENT.NS", "PETRONET.NS", "PHOENIXLTD.NS", "POLYCAB.NS", "POONAWALLA.NS", "PRESTIGE.NS", "RVNL.NS", "SBICARD.NS", "SJVN.NS", "SRF.NS", "SOLARINDS.NS", "SONACOMS.NS", "SAIL.NS", "SUNDARMFIN.NS", "SUPREMEIND.NS", "SUZLON.NS", "TATACHEM.NS", "TATACOMM.NS", "TATAELXSI.NS", "TATATECH.NS", "TORNTPOWER.NS", "TIINDIA.NS", "UPL.NS", "IDEA.NS", "VOLTAS.NS", "YESBANK.NS"]
 
-'''Small cap 250
-[
-    "360ONE", "AARTIIND", "AAVAS", "ACE", "AETHER", "AFFLE", 
-    "APLLTD", "ALKYLAMINE", "ALLCARGO", "ALOKINDS", "ARE&M", "AMBER", 
-    "ANANDRATHI", "ANGELONE", "ANURAS", "APARINDS", "APTUS", "ACI", 
-    "ASAHIINDIA", "ASTERDM", "ASTRAZEN", "AVANTIFEED", "BEML", "BLS", 
-    "BALAMINES", "BALRAMCHIN", "BIKAJI", "BIRLACORPN", "BSOFT", "BLUEDART", 
-    "BLUESTARCO", "BBTC", "BORORENEW", "BRIGADE", "MAPMYINDIA", "CCL", 
-    "CESC", "CIEINDIA", "CSBBANK", "CAMPUS", "CANFINHOME", "CAPLIPOINT", 
-    "CGCL", "CASTROLIND", "CEATLTD", "CELLO", "CENTRALBK", "CDSL", 
-    "CENTURYPLY", "CENTURYTEX", "CERA", "CHALET", "CHAMBLFERT", "CHEMPLASTS", 
-    "CHENNPETRO", "CHOLAHLDNG", "CUB", "CLEAN", "COCHINSHIP", "CAMS", 
-    "CONCORDBIO", "CRAFTSMAN", "CREDITACC", "CROMPTON", "CYIENT", "DCMSHRIRAM", 
-    "DOMS", "DATAPATTNS", "DEEPAKFERT", "EIDPARRY", "EIHOTEL", "EPL", 
-    "EASEMYTRIP", "ELECON", "ELGIEQUIP", "ENGINERSIN", "EQUITASBNK", "ERIS", 
-    "EXIDEIND", "FDC", "FINEORG", "FINCABLES", "FINPIPE", "FSL", "FIVESTAR", 
-    "GMMPFAUDLR", "GRSE", "GILLETTE", "GLS", "GLENMARK", "MEDANTA", "GPIL", 
-    "GODFRYPHLP", "GRANULES", "GRAPHITE", "GESHIP", "GAEL", "GMDCLTD", 
-    "GNFC", "GPPL", "GSFC", "GSPL", "HEG", "HBLPOWER", "HFCL", 
-    "HAPPSTMNDS", "HAPPYFORGE", "HSCL", "HINDCOPPER", "POWERINDIA", "HOMEFIRST", 
-    "HONASA", "HUDCO", "IDFC", "IIFL", "IRB", "IRCON", "ITI", 
-    "INDIACEM", "INDIAMART", "IEX", "IOB", "INDIGOPNTS", "INOXWIND", "INTELLECT", 
-    "JBCHEPHARM", "JBMA", "JKLAKSHMI", "JKPAPER", "JMFINANCIL", "JAIBALAJI", 
-    "J&KBANK", "JINDALSAW", "JUBLINGREA", "JUBLPHARMA", "JWL", "JUSTDIAL", 
-    "JYOTHYLAB", "KNRCON", "KRBL", "KSB", "KPIL", "KARURVYSYA", "KAYNES", 
-    "KEC", "KFINTECH", "KIMS", "LATENTVIEW", "LXCHEM", "LEMONTREE", "MMTC", 
-    "MTARTECH", "MGL", "MAHSEAMLES", "MHRIL", "MAHLIFE", "MANAPPURAM", 
-    "MRPL", "MASTEK", "MEDPLUS", "METROPOLIS", "MINDACORP", "MOTILALOFS", 
-    "MCX", "NATCOPHARM", "NBCC", "NCC", "NLCINDIA", "NSLNISP", "NH", 
-    "NATIONALUM", "NAVINFLUOR", "NETWORK18", "NAM-INDIA", "NUVAMA", "NUVOCO", 
-    "OLECTRA", "PCBL", "PNBHOUSING", "PNCINFRA", "PVRINOX", "PPLPHARMA", 
-    "POLYMED", "PRAJIND", "PRINCEPIPE", "PRSMJOHNSN", "QUESS", "RRKABEL", 
-    "RBLBANK", "RHIM", "RITES", "RADICO", "RAILTEL", "RAINBOW", 
-    "RAJESHEXPO", "RKFORGE", "RCF", "RATNAMANI", "RTNINDIA", "RAYMOND", 
-    "REDINGTON", "RBA", "ROUTE", "SBFC", "SAFARI", "SAMMAANCAP", 
-    "SANOFI", "SAPPHIRE", "SAREGAMA", "SCHNEIDER", "RENUKA", "SHYAMMETL", 
-    "SIGNATURE", "SOBHA", "SONATSOFTW", "SWSOLAR", "STLTECH", "SPARC", 
-    "SUNTECK", "SUVENPHAR", "SWANENERGY", "SYRMA", "TV18BRDCST", "TVSSCS", 
-    "TMB", "TANLA", "TATAINVEST", "TTML", "TEJASNET", "TITAGARH", 
-    "TRIDENT", "TRIVENI", "TRITURBINE", "UCOBANK", "UTIAMC", "UJJIVANSFB", 
-    "USHAMART", "VGUARD", "VIPIND", "VAIBHAVGBL", "VTL", "VARROC", 
-    "VIJAYA", "WELCORP", "WELSPUNLIV", "WESTLIFE", "WHIRLPOOL", "ZENSARTECH", 
-    "ECLERX"
-]'''
 
 @app.route('/')
 def home():
@@ -525,9 +450,19 @@ def delivery(symbols_get):
     else:
         symbols1 = request.args.get('symbols')
         
-        symbols = symbols1.split(',') if symbols1 else predefined_symbols
+        if symbols1 == 'small':
+            symbols =predefined_symbols_s
+            #symbols = symbols1 if symbols1 else predefined_symbols
+        elif symbols1 == 'nifty50':
+            symbols =predefined_symbols
+        elif symbols1 == '500':
+            symbols = predefined_symbols_500
+        elif symbols1 == 'mid':
+            symbols = predefined_symbols_m
+        else:
+            symbols = symbols1.split(',') if symbols1 else predefined_symbols
     
-        
+    print(symbols)
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     data = fetch_delivery_data(symbols,0)
