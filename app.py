@@ -22,7 +22,7 @@ df_csv.columns = df_csv.columns.str.strip()
 df_csv = df_csv.dropna(subset=[df_csv.columns[0]], how='all')
 final_decision_news = df_csv
 #Start for deployment
-'''import os
+import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -32,7 +32,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)'''
+os.makedirs(cache_dir)
 #stop for deployment
 
 app = Flask(__name__)
@@ -580,7 +580,19 @@ def delivery(symbols_get):
             stoploss = df['support'].iloc[-1]
             stoploss=round(stoploss,2)
                                  
-            
+            for index, row in final_decision_news.iterrows():
+                
+                news_symb1 =row['Stock Symbol']
+                news_symb =news_symb1 +".NS"
+                if symbol == news_symb:
+                    news_decision_t = row['Decision']
+                    news_decision_pcr = row['Final Decision']
+                    break
+                else:
+                    news_decision_t = 'Hold'  
+                    news_decision_pcr = 'Hold' 
+            news_tech = news_decision_t
+            news_pcr = news_decision_pcr
             # Determine final decision based on sentiment
             decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix)
 
@@ -753,6 +765,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
     
-    #app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True, host='0.0.0.0', port=80)
