@@ -119,7 +119,7 @@ def calculate_indicators(df,num2=5):
     return df
 
 # Function to make trading decisions
-def final_decision(df,vix):
+def final_decision(df,vix,news_tech,news_pcr):
     last_row = df.iloc[-1]
     
     indicators = {
@@ -594,7 +594,7 @@ def delivery(symbols_get):
             news_tech = news_decision_t
             news_pcr = news_decision_pcr
             # Determine final decision based on sentiment
-            decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix)
+            decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix,news_tech,news_pcr)
 
             symbols_NS = symbol[:-3]
             last_Price,pChange = fetch_price_data(symbols_NS)
