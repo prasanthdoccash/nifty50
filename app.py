@@ -13,9 +13,16 @@ import json
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
-
+from news import merger
+#final_decision_news = merger()
+csv_file = 'merged_output.csv'
+# Read the CSV file
+df_csv = pd.read_csv(csv_file)
+df_csv.columns = df_csv.columns.str.strip()
+df_csv = df_csv.dropna(subset=[df_csv.columns[0]], how='all')
+final_decision_news = df_csv
 #Start for deployment
-import os
+'''import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -25,7 +32,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 #stop for deployment
 
 app = Flask(__name__)
@@ -61,8 +68,12 @@ def calculate_indicators(df,num2=5):
     #df['adx'] = ADXIndicator(df['High'], df['Low'], df['Close'], window=14).adx()
     # Calculate ADX, +DI, and -DI using ta library
     df['adx1'] = ta.trend.adx(df['High'], df['Low'], df['Close'], window=14)
-    df['+DI'] = ta.trend.adx_pos(df['High'], df['Low'], df['Close'], window=14)
-    df['-DI'] = ta.trend.adx_neg(df['High'], df['Low'], df['Close'], window=14)
+    df['DI+'] = ta.trend.adx_pos(df['High'], df['Low'], df['Close'], window=14)
+    
+    df['DI-'] = ta.trend.adx_neg(df['High'], df['Low'], df['Close'], window=14)
+   
+    # Calculate the divergence between EMA and SMA
+    df['ema_sma_divergence'] = df['ema'] - df['sma']
 
     df['pivot_point'] = (df['High'] + df['Low'] + df['Close']) / 3
     df['support'] = (2 * df['pivot_point']) - df['High']
@@ -71,10 +82,21 @@ def calculate_indicators(df,num2=5):
     #df['resistance_2'] = df['pivot_point'] + (df['High'] - df['Low'])
 
     
-    # Determine buy signals
-    df['adx'] = (df['adx1'] > 20) & (df['+DI'] > df['-DI']) & (df['+DI'].shift(1) <= df['-DI'].shift(1))
     
-    df['stochastic'] = StochasticOscillator(df['High'], df['Low'], df['Close'], window=14).stoch()
+    # Determine buy signals
+    df['adx'] = (df['adx1'] > 20) & (df['DI+'] > df['DI-']) & (df['DI+'].shift(1) <= df['DI-'].shift(1))
+    
+    # Calculate the lowest low and highest high over the look-back period (k_period)
+    df['Lowest_Low'] = df['Low'].rolling(window=14).min()
+    df['Highest_High'] = df['High'].rolling(window=14).max()
+    
+    
+    # Calculate %K
+    
+    df['stochastic'] = 100 * ((df['Close'] - df['Lowest_Low']) / (df['Highest_High'] - df['Lowest_Low']))
+    
+    # Calculate %D (3-period moving average of %K)
+    df['stochastic_d'] = df['stochastic'].rolling(window=3).mean()
     
     vwap_indicator = ta.volume.VolumeWeightedAveragePrice(
         high=df['High'],
@@ -127,7 +149,7 @@ def final_decision(df,vix):
     
     buy_signals = 0
     sell_signals = 0
-    hold_signal = 0
+    hold_signals = 0
     
     buy = []
     sell = []
@@ -138,47 +160,107 @@ def final_decision(df,vix):
         if df['pe'].iloc[-1] <= df['average_pe'].iloc[-1]:
             buy_signals += 1
             buy.append('PE')
+        elif abs(df['pe'].iloc[-1] - df['average_pe'].iloc[-1]) < (0.05 * df['average_pe'].iloc[-1]):
+            hold_signals += 1
+            hold.append('PE')
         else:
             sell_signals += 1
             sell.append('PE')
 
-    if df['signal'].iloc[-1] == True:
+    vwap_deviation = (last_row['Close'] - last_row['vwap']) / last_row['vwap']
+    if vwap_deviation > 0.02:  # Close is more than 2% above VWAP
         buy_signals += 1
-        buy.append('VWAP')
-    else:
+        buy.append('VWAP Strong Buy')
+    elif vwap_deviation < -0.02:  # Close is more than 2% below VWAP
         sell_signals += 1
-        sell.append('VWAP')
-
-    if indicators['williams_r'] > -20: #overbought
-        sell_signals += 1 
-        sell.append('williamsR')
-    elif indicators['williams_r'] < -80: #oversold
-        buy.append('williamsR') 
+        sell.append('VWAP Strong Sell')
+    # Check if VWAP is trending up or down
+    if last_row['vwap'] > df['vwap'].iloc[-2]:
         buy_signals += 1
+        buy.append('VWAP Trend Up')
+    elif last_row['vwap'] < df['vwap'].iloc[-2]:
+        sell_signals += 1
+        sell.append('VWAP Trend Down')
+    # VWAP Crossover Logic
+    if (df['Close'].iloc[-2] < df['vwap'].iloc[-2]) and (last_row['Close'] > last_row['vwap']):  # Crossed above VWAP
+        buy_signals += 1
+        buy.append('VWAP Cross Above')
+    elif (df['Close'].iloc[-2] > df['vwap'].iloc[-2]) and (last_row['Close'] < last_row['vwap']):  # Crossed below VWAP
+        sell_signals += 1
+        sell.append('VWAP Cross Below')
+    
+
+    if news_tech == 'SuperBuy':
+        buy_signals += 2  # Adding a strong influence to buy signals
+        buy.append('Tech SuperBuy')
+    elif news_tech == 'IntraBuy':
+        buy_signals += 1
+        buy.append('Tech IntraBuy')
+    elif news_tech == 'Sell':
+        sell_signals += 2
+        sell.append('Tech Sell')
     else:
-        hold_signal +=1
+        hold_signals += 1
+        hold.append('Tech Watch')
+    if news_pcr == 'SuperBuy':
+        buy_signals += 2
+        buy.append('PCR SuperBuy')
+    
+    elif news_pcr == 'Sell':
+        sell_signals += 2
+        sell.append('PCR Sell')
+    else:
+        buy_signals += 1
+        buy.append('PCR Watch')
+
+
+    if indicators['williams_r'] > -20 and df['williams_r'].iloc[-2] <= -20:  # just crossed into overbought zone
+        sell_signals += 1
+        sell.append('Williams R')
+    elif indicators['williams_r'] < -80 and df['williams_r'].iloc[-2] >= -80:  # just crossed into oversold zone
+        buy_signals += 1
+        buy.append('Williams R')
+    else:
+        hold_signals +=1
         hold.append('williamsR')
     
-    if indicators['ROC'] > 0: #increasing
-        buy.append('ROC')
+     # Improved ROC Logic
+    roc_strength = indicators['ROC']  # Current ROC value
+    roc_previous = df['ROC'].iloc[-2]
+    if roc_strength > 5:
+        buy.append('Strong ROC Buy')
         buy_signals += 1
-    elif indicators['ROC'] < 0: #decreasing
+    elif roc_strength < -5:
         sell_signals += 1
-        sell.append('ROC')
-    else:
-        hold_signal +=1
-        hold.append('ROC')
-    
-    
-    if indicators['Volume_Trend'] > df['Volume_Trend'].shift(1).iloc[-1]: #increasing
-        buy.append('Volume_Trend')
-        buy_signals += 1  
-    elif indicators['Volume_Trend'] < df['Volume_Trend'].shift(1).iloc[-1]: #decreasing
+        sell.append('Strong ROC Sell')
+
+    if roc_strength > roc_previous:
+        buy_signals += 1
+        buy.append('ROC Momentum Increase')
+    elif roc_strength < roc_previous:
         sell_signals += 1
-        sell.append('Volume_Trend')
-    else:
-        hold_signal +=1
-        hold.append('Volume_Trend')
+        sell.append('ROC Momentum Decrease')
+    # Divergence detection: If price is increasing but ROC is decreasing, indicate weakening trend
+    if (last_row['Close'] > df['Close'].iloc[-2]) and (roc_strength < roc_previous):
+        sell_signals += 1
+        sell.append('ROC Price Divergence')
+    
+    volume_change = (indicators['Volume_Trend'] - df['Volume_Trend'].iloc[-2]) / df['Volume_Trend'].iloc[-2]
+    avg_volume = df['Volume_Trend'].rolling(window=20).mean().iloc[-1]  # Average volume over the past 20 periods
+    if indicators['Volume_Trend'] > avg_volume and volume_change > 0.1:  # If volume is 10% higher than the average volume
+        buy_signals += 1
+        buy.append('High Volume Buy')
+        
+    elif indicators['Volume_Trend'] < avg_volume and volume_change < -0.1:  # If volume is 10% lower than the average volume
+        sell_signals += 1
+        sell.append('Low Volume Sell')
+    # Check for volume trend direction
+    if volume_change > 0.05:  # If volume trend is increasing more than 5%
+        buy_signals += 1
+        buy.append('Volume Trend Increase')
+    elif volume_change < -0.05:  # If volume trend is decreasing more than 5%
+        sell_signals += 1
+        sell.append('Volume Trend Decrease')
    
     rsi2 = df['rsi'].iloc[-1] - df['rsi'].iloc[-2]
     roc2 = df['ROC'].iloc[-1] - df['ROC'].iloc[-2]
@@ -198,29 +280,29 @@ def final_decision(df,vix):
         buy.append('Sell')
     
 
-    if indicators['rsi'] <= 30: #oversold
+    if indicators['rsi'] < 30 and df['rsi'].iloc[-2] >= 30:  # RSI just moved into oversold
         buy.append('RSI')
         buy_signals += 1
-    elif indicators['rsi'] >= 80: #overbought
+    elif indicators['rsi'] > 80 and df['rsi'].iloc[-2] <= 80:  # RSI just moved into overbought
         sell_signals += 1 
         sell.append('RSI')
     elif indicators['rsi'] > 30 and indicators['rsi'] < 80:
-        hold_signal +=1
+        hold_signals +=1
         hold.append('RSI')
     
 
     # MACD
-    if indicators['macd'] > 0:
+    if indicators['macd'] > df['macd_signal'].iloc[-1]:  # if MACD line is above the signal line
         buy_signals += 1
-        buy.append('MACD')
+        buy.append('MACD Cross')
     elif indicators['macd'] < 0:
         sell_signals += 1
         sell.append('MACD')
 
     # EMA and SMA
-    if indicators['ema'] > indicators['sma']:
+    if indicators['ema'] > indicators['sma'] and (indicators['ema'] - indicators['sma']) > df['ema_sma_divergence'].iloc[-1]:
         buy_signals += 1
-        buy.append('EMA')
+        buy.append('EMA Crossover Strengthening')
     else:
         sell_signals += 1
         sell.append('EMA')
@@ -234,68 +316,85 @@ def final_decision(df,vix):
         sell_signals += 1
         sell.append('BOLLINGER')
     elif last_row['Close'] > indicators['bollinger_low'] and last_row['Close'] < indicators['bollinger_high']:
-        hold_signal +=1
+        hold_signals +=1
         hold.append('BOLLINGER')
 
     # ADX
     
-    if indicators['adx'] == True:
-        
-        if last_row['Close'] > indicators['ema']:
+    if 'DI+' in df.columns and 'DI-' in df.columns:
+        adx_value = indicators['adx']
+        adx_prev = df['adx'].iloc[-2]
+        # Check ADX thresholds
+        if adx_value > 25:
             buy_signals += 1
-            buy.append('ADX')
-        else:
+            buy.append('Strong ADX Buy')
+        elif adx_value < 20:
             sell_signals += 1
-            sell.append('ADX')
-    else:
-        hold_signal +=1
-        hold.append('ADX')
+            sell.append('Weak Trend Sell')
+        # Detect trend change: if ADX is increasing after being below 20
+        if adx_value > adx_prev and adx_prev < 20:
+            buy_signals += 1
+            buy.append('ADX Trend Change Buy')
+        # Check directional movement (assuming DI+ and DI- are in the dataframe)
+    
+        if df['DI+'].iloc[-1] > df['DI-'].iloc[-1] and adx_value > 25:  # Strong bullish trend
+            buy_signals += 1
+            buy.append('Bullish DI+')
+        elif df['DI+'].iloc[-1] < df['DI-'].iloc[-1] and adx_value > 25:  # Strong bearish trend
+            sell_signals += 1
+            sell.append('Bearish DI-')
+        
+      
     
     # Stochastic Oscillator
-    if indicators['stochastic'] < 20:
+    stochastic_k = indicators['stochastic']  # Assuming %K value
+    stochastic_d = df['stochastic_d'].iloc[-1]  # Assuming %D value is in the dataframe
+    # Crossover strategy
+    if stochastic_k < 20 and stochastic_k > stochastic_d:  # %K crossing above %D below 20 (oversold)
         buy_signals += 1
-        buy.append('STOCHASTIC')
-    elif indicators['stochastic'] > 80:
+        buy.append('Stochastic Cross Buy')
+    elif stochastic_k > 80 and stochastic_k < stochastic_d:  # %K crossing below %D above 80 (overbought)
         sell_signals += 1
-        sell.append('STOCHASTIC')
-    elif indicators['stochastic'] >20 and indicators['stochastic'] <80:
-        hold_signal +=1
-        hold.append('STOCHASTIC')
-    
+        sell.append('Stochastic Cross Sell')
+    # Detect divergence: e.g., price making lower lows but Stochastic making higher lows
+    if (last_row['Close'] < df['Close'].min()) and (stochastic_k > stochastic_d):
+        buy_signals += 1
+        buy.append('Stochastic Divergence Buy')
 
-    # VWAP
-    '''if last_row['Close'] > indicators['vwap']:
-        buy_signals += 1
-        buy.append('VWAP')
-    else:
-        sell_signals += 1
-        sell.append('VWAP')'''
             
     decision = ''
     
-    if ('Super Buy' in buy and 'ADX' in buy and 'VWAP' in buy) or (('Buy' in buy or 'Super Buy' in buy) and 'PE' in buy):
-        decision = 'Intra Buy' #orange
-    elif ('VWAP' in buy and 'MACD' in buy and 'EMA' in buy and 'ROC' in buy ):
-        if ('Super Buy' in buy  and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell) or ('Super Buy' in buy  and 'Volume_Trend' in buy):
-            decision = 'Buy' #Blue
-        elif ('Buy' in buy or 'Super Buy' in buy)  or ('Buy' in buy  and 'Volume_Trend' in buy):
-            decision = 'Watch'#Green
-        elif  ('Hold' in buy and 'williamsR' not in sell and 'STOCHASTIC' not in sell and 'BOLLINGER' not in sell):
-            decision = 'Hold' #Green
-         
-        else:
-            decision= 'Sell' #white
-    elif ('Buy' in buy or 'Super Buy' in buy) and 'VWAP' in buy and 'ROC' in buy and ( 'EMA' in buy or 'MACD' in buy):
-        decision = 'Buy'#Green
+    # Apply priority rules for Buy, Hold, and Sell decisions
+    if buy_signals >= 4 and sell_signals < 2:
+        decision = 'Buy'
+    elif sell_signals >= 4 and buy_signals < 2:
+        decision = 'Sell'
+    elif buy_signals >= 3 and hold_signals >= 2:
+        decision = 'Watch'
+    elif hold_signals > buy_signals and hold_signals > sell_signals:
+        decision = 'Hold'
     else:
-        decision= 'Sell'
+        decision = 'Watch'
 
-    if decision == 'Sell':
-        if ('Buy' in buy or 'Super Buy' in buy or  'PE' in buy):
-            decision = 'Buy'#Green
+    if 'VWAP Strong Buy' in buy and 'RSI' in buy and 'MACD Cross' in buy and  'Strong ROC Buy' in buy and 'Super Buy' in buy :
+        decision = 'Super Buy'
+    elif ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy:
+        decision = 'Buy'
+    
+    if ('Tech SuperBuy' in buy or 'PCR SuperBuy' in buy or 'PCR Watch' in buy) or ('Super Buy' in buy and 'PE' in buy):
+        if 'Tech Sell' in sell or 'PCR Sell' in sell:
+             decision = 'Watch'
+        else:
+            decision = 'Buy'
+    if 'Tech Sell' in sell or 'PCR Sell' in sell or 'Sell' in buy:
+        if 'Tech SuperBuy' in buy or 'PCR SuperBuy' in buy:
+            decision = 'Watch'
+      
+        else:
+            decision = 'Sell'
        
    
-    return decision,buy_signals,sell_signals,hold_signal, buy,sell,hold
+    return decision,buy_signals,sell_signals,hold_signals, buy,sell,hold
     
 
 ###########################################################################
@@ -462,7 +561,7 @@ def delivery(symbols_get):
         else:
             symbols = symbols1.split(',') if symbols1 else predefined_symbols
     
-    print(symbols)
+   
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     data = fetch_delivery_data(symbols,0)
@@ -483,7 +582,7 @@ def delivery(symbols_get):
                                  
             
             # Determine final decision based on sentiment
-            decision,buy_signals,sell_signals,hold_signal, buy,sell,hold = final_decision(df,vix)
+            decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix)
 
             symbols_NS = symbol[:-3]
             last_Price,pChange = fetch_price_data(symbols_NS)
@@ -502,7 +601,7 @@ def delivery(symbols_get):
                 'stoploss':stoploss,
                 'buy_signals':buy_signals,
                 'sell_signals':sell_signals,
-                'hold_signal':hold_signal,
+                'hold_signal':hold_signals,
                 'buy':buy,
                 'sell':sell,
                 'hold': hold
@@ -561,7 +660,7 @@ def intraday(symbols_get):
                                 
             
             # Determine final decision based on sentiment
-            decision,buy_signals,sell_signals,hold_signal, buy,sell,hold = final_decision(df,vix)
+            decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix)
             symbols_NS = symbol[:-3]
             last_Price ,pChange= fetch_price_data(symbols_NS)
             
@@ -579,7 +678,7 @@ def intraday(symbols_get):
                 #'price_target': target,
                 'buy_signals':buy_signals,
                 'sell_signals':sell_signals,
-                'hold_signal':hold_signal,
+                'hold_signal':hold_signals,
                 'buy':buy,
                 'sell':sell,
                 'hold': hold
@@ -654,6 +753,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
+    app.run(debug=True)
     
-    app.run(debug=True, host='0.0.0.0', port=80)
+    #app.run(debug=True, host='0.0.0.0', port=80)
