@@ -13,7 +13,7 @@ import json
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
-from news import merger
+#from news import merger
 #final_decision_news = merger()
 csv_file = 'merged_output.csv'
 # Read the CSV file
