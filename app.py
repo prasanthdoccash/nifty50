@@ -467,7 +467,7 @@ def final_decision(df,vix,news_tech,news_pcr):
         decision = 'Buy'
     
     if ('supertrend' in buy or 'supertrend' in hold) and 'Tech SuperBuy' in buy and ('Buy' in buy or 'Super Buy' in buy):
-        decision = 'Watch'
+        decision = 'Buy'
 
     if ('supertrend' in buy or 'supertrend' in hold) and 'Tech SuperBuy' in buy and ('Buy' in buy or 'Super Buy' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
