@@ -463,6 +463,8 @@ def final_decision(df,vix,news_tech,news_pcr):
 
     if 'Sell' in buy and 'supertrend' in sell:
         decision = 'Sell'
+    if 'Hold' in buy and 'supertrend' in hold:
+        decision = 'Watch'
     if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'RSI' in buy and 'MACD Cross' in buy and  'Strong ROC Buy' in buy and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
     elif 'supertrend' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
