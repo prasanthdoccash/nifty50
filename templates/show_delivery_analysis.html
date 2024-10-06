@@ -110,8 +110,8 @@ function checkAlerts() {
         // Ensure cells exist and have the necessary data
         if (cells.length >= 8) { // Adjust based on your table structure
             var symbol = cells[1].innerText.trim(); // Symbol column
-            var RSIAction = cells[1].innerText.trim(); // RSI column
-            var DecisionAction = cells[7].innerText.trim(); // Final Decision column
+            var RSIAction = cells[4].innerText.trim(); // RSI column
+            var DecisionAction = cells[1].innerText.trim(); // Final Decision column
             var MACDAction = cells[1].innerText.trim(); // MACD Action column
 
             console.log("Symbol:", symbol);
@@ -128,7 +128,7 @@ function checkAlerts() {
                 
                 // Check for changes in RSI Action
                 if (dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) {
-                    message += "RSI changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
+                    message += "Decision changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
                 }
                 
                 // Check for changes in Final Decision Action
@@ -236,9 +236,9 @@ function checkAlerts() {
                     <th>Symbol</th>
                     <th>LTP</th>
                     <th>Change %</th>
-                    <th>Buy Signals</th>
-                    <th>Sell Signals</th>
-                    <th>Hold Signals</th>
+                    <th>Target</th>
+                    <th>Stoploss</th>
+                    
                     <th>Final Decision</th>
                     
                     <th>Buy</th>
@@ -248,11 +248,11 @@ function checkAlerts() {
             </thead>
             <tbody>
                 {% for result in results %}
-                {% if result.decision == 'Buy'%}
+                {% if result.decision == 'Buy' or result.buy_signals == 'Buy'%}
                     <tr class="superbuy-decision">
-                {% elif result.decision == 'Intra Buy' %}
+                {% elif result.decision == 'Intra Buy' and result.buy_signals == 'Buy' %}
                     <tr class="intrabuy-decision">
-                {% elif result.decision == 'Watch' or result.decision == 'Hold' %}
+                {% elif result.decision == 'Watch' or result.decision == 'Hold' or result.buy_signals == 'Buy' %}
                     <tr class="buy-decision">
                 {% else %}
                     <tr>
@@ -261,9 +261,9 @@ function checkAlerts() {
                     <td>{{ result.symbol }}</td>
                     <td>{{ result.LTP }}</td>
                     <td>{{ result.pChange }}</td>
-                    <td>{{ result.buy_signals }}</td>
-                    <td>{{ result.sell_signals }}</td>
-                    <td>{{ result.hold_signal }}</td>
+                    <td>{{ result.price_target }}</td>
+                    <td>{{ result.stoploss }}</td>
+                   
                     <td>{{ result.decision }}</td>
                     
                     <td>{{ result.buy }}</td>
