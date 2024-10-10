@@ -11,6 +11,8 @@ from ta.trend import MACD, EMAIndicator, SMAIndicator, ADXIndicator
 from ta.volatility import BollingerBands
 import json
 import warnings
+from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
 #from news import merger
@@ -21,8 +23,15 @@ df_csv = pd.read_csv(csv_file)
 df_csv.columns = df_csv.columns.str.strip()
 df_csv = df_csv.dropna(subset=[df_csv.columns[0]], how='all')
 final_decision_news = df_csv
+
+csv_file_old = 'merged_output1.csv'
+# Read the CSV file
+df_csv_old = pd.read_csv(csv_file_old)
+df_csv_old.columns = df_csv_old.columns.str.strip()
+df_csv_old = df_csv_old.dropna(subset=[df_csv_old.columns[0]], how='all')
+final_decision_news_old = df_csv_old
 #Start for deployment
-import os
+'''import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -32,7 +41,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 #stop for deployment
 
 app = Flask(__name__)
@@ -460,12 +469,16 @@ def final_decision(df,vix,news_tech,news_pcr):
         decision = 'Hold'
     else:
         decision = 'Sell'
-
+    
     if 'Sell' in buy and 'supertrend' in sell:
         decision = 'Sell'
+    
     if 'Hold' in buy and 'supertrend' in hold:
         decision = 'Watch'
+
     if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'RSI' in buy and 'MACD Cross' in buy and  'Strong ROC Buy' in buy and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
+        decision = 'Super Buy'
+    elif 'supertrend' in buy and 'PCR SuperBuy' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
     elif 'supertrend' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Buy'
@@ -480,13 +493,16 @@ def final_decision(df,vix,news_tech,news_pcr):
     elif ('supertrend' in buy or 'supertrend' in hold) and 'Tech SuperBuy' in buy and ('Sell' in buy or 'PE' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Watch'
      
-       
-   
+    if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and 'Tech SuperBuy' in buy and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy'):
+        decision = 'Super Buy'
+    
     return decision,buy_signals,sell_signals,hold_signals, buy,sell,hold
     
 
 ###########################################################################
 nse = NSELive()
+# Caching stock data fetching
+#@lru_cache(maxsize=1000)
 def fetch_delivery_data(symbols, num1):
    
     all_data = {}
@@ -513,6 +529,46 @@ def fetch_delivery_data(symbols, num1):
             all_data[symbol] = df
     
     return all_data
+
+# New function to handle parallel processing
+def fetch_delivery_data_parallel(symbols, num1):
+    all_data = {}
+    
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        # Create a future for each symbol
+        future_to_symbol = {executor.submit(fetch_single_symbol_data, symbol, num1): symbol for symbol in symbols}
+        
+        for future in concurrent.futures.as_completed(future_to_symbol):
+            symbol = future_to_symbol[future]
+            try:
+                data = future.result()
+                if data is not None:
+                    all_data[symbol] = data
+            except Exception as e:
+                print(f"Error fetching data for {symbol}: {e}")
+    
+    return all_data
+
+# Helper function to fetch data for a single symbol
+def fetch_single_symbol_data(symbol, num1):
+    stock = yf.Ticker(symbol)
+    if num1 == 0:
+        df = stock.history(period="1y", interval="1d")
+    else:
+        df = stock.history(period="5d", interval="5m")
+
+    df['pe'] = stock.info.get('trailingPE')
+    df['eps'] = stock.info.get('trailingEps')
+
+    if not df.empty:
+        checkpe = df['pe'].iloc[-1]
+        checkeps = df['eps'].iloc[-1]
+        if checkpe is None:
+            df['pe'] = 0
+        if checkeps is None:
+            df['eps'] = 0
+
+    return df if not df.empty else None
 
 def fetch_price_data(symbol):
     dq = {}
@@ -608,11 +664,15 @@ predefined_symbols_500 = [f"{symbol}.NS" for symbol in predefined_symbols_5]
 predefined_symbols_m =["ACC.NS", "APLAPOLLO.NS", "AUBANK.NS", "ABCAPITAL.NS", "ABFRL.NS", "ALKEM.NS", "APOLLOTYRE.NS", "ASHOKLEY.NS", "ASTRAL.NS", "AUROPHARMA.NS", "BSE.NS", "BALKRISIND.NS", "BANDHANBNK.NS", "BANKINDIA.NS", "MAHABANK.NS", "BDL.NS", "BHARATFORG.NS", "BHARTIHEXA.NS", "BIOCON.NS", "CGPOWER.NS", "COCHINSHIP.NS", "COFORGE.NS", "COLPAL.NS", "CONCOR.NS", "CUMMINSIND.NS", "DELHIVERY.NS", "DIXON.NS", "ESCORTS.NS", "EXIDEIND.NS", "NYKAA.NS", "FEDERALBNK.NS", "FACT.NS", "GMRINFRA.NS", "GODREJPROP.NS", "HDFCAMC.NS", "HINDPETRO.NS", "HINDZINC.NS", "HUDCO.NS", "IDBI.NS", "IDFCFIRSTB.NS", "IRB.NS", "INDIANB.NS", "INDHOTEL.NS", "IOB.NS", "IREDA.NS", "IGL.NS", "INDUSTOWER.NS", "JSWINFRA.NS", "JUBLFOOD.NS", "KPITTECH.NS", "KALYANKJIL.NS", "LTF.NS", "LICHSGFIN.NS", "LUPIN.NS", "MRF.NS", "M&MFIN.NS", "MRPL.NS", "MANKIND.NS", "MARICO.NS", "MFSL.NS", "MAXHEALTH.NS", "MAZDOCK.NS", "MPHASIS.NS", "MUTHOOTFIN.NS", "NLCINDIA.NS", "NMDC.NS", "OBEROIRLTY.NS", "OIL.NS", "PAYTM.NS", "OFSS.NS", "POLICYBZR.NS", "PIIND.NS", "PAGEIND.NS", "PATANJALI.NS", "PERSISTENT.NS", "PETRONET.NS", "PHOENIXLTD.NS", "POLYCAB.NS", "POONAWALLA.NS", "PRESTIGE.NS", "RVNL.NS", "SBICARD.NS", "SJVN.NS", "SRF.NS", "SOLARINDS.NS", "SONACOMS.NS", "SAIL.NS", "SUNDARMFIN.NS", "SUPREMEIND.NS", "SUZLON.NS", "TATACHEM.NS", "TATACOMM.NS", "TATAELXSI.NS", "TATATECH.NS", "TORNTPOWER.NS", "TIINDIA.NS", "UPL.NS", "IDEA.NS", "VOLTAS.NS", "YESBANK.NS"]
 
 #tech superbuy symbols
-def tech_superbuy():
+def tech_superbuy(intrabuy):
     #df_tech = pd.read_excel('auto_updated_with_decisions.xlsx')  # Adjust sheet name if necessary
-    
+    if intrabuy == 1:
+        final_decision_news1 = final_decision_news_old
+    else:
+        final_decision_news1 = final_decision_news
+
     results1 = []
-    for index, row in final_decision_news.iterrows():
+    for index, row in final_decision_news1.iterrows():
         #tech_stock_symbol = row['Stock Symbol']
         #results1.append(tech_stock_symbol) 
 
@@ -668,7 +728,10 @@ def delivery(symbols_get):
             symbols = predefined_symbols_m
         elif symbols1 == 'superbuy':
             
-            symbols = tech_superbuy()
+            symbols = tech_superbuy(0)
+        elif symbols1 == 'intrabuy':
+            
+            symbols = tech_superbuy(1)
         else:
             symbols = symbols1.split(',') if symbols1 else predefined_symbols
     
@@ -680,6 +743,7 @@ def delivery(symbols_get):
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
     now = 0
+    i=1
     for symbol, df in data.items():
         try:
             # Calculate indicators
@@ -689,14 +753,14 @@ def delivery(symbols_get):
                 news_symb1 =news_symb +".NS"
                 if symbol == news_symb1:
                     news_decision_t = row['Decision']
-                    news_decision_pcr = row['Final Decision']
+                    #news_decision_pcr = row['Final Decision']
                     break
                 else:
                     news_decision_t = 'Hold'  
-                    news_decision_pcr = 'Hold' 
+                    #news_decision_pcr = 'Hold' 
             news_tech = news_decision_t
-            news_pcr = news_decision_pcr
-            
+            #news_pcr = news_decision_pcr
+            news_pcr = 'Hold'  
             #if news_tech =='SuperBuy':
 
             df = calculate_indicators(df,now)
@@ -726,8 +790,9 @@ def delivery(symbols_get):
             last_Price,pChange = fetch_price_data(symbols_NS)
         
         
-                
-            
+           # decision = "Buy"
+            print(i,symbol)
+            i=i+1
             # Prepare data for each symbol
             symbol_data = {
                 'symbol': symbol,
@@ -748,7 +813,7 @@ def delivery(symbols_get):
             }
             
             results.append(symbol_data)  
-        
+
         except KeyError as e:
             print(f"KeyError: {str(e)}. Skipping symbol {symbol}.")
             continue
@@ -762,14 +827,18 @@ def view_stock_analysis(symbol):
     
     # Pass the trimmed symbol to index1.html
     return render_template('index1.html', stock_symbol=trimmed_symbol)
-    
+
+
+
+
 @app.route('/delivery')
 def delivery1():
     symb = ''
     results,last_refreshed,vix,vix_senti = delivery(symb)
     
     return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
-   
+
+
 def intraday(symbols_get):
     
     
@@ -817,13 +886,14 @@ def intraday(symbols_get):
                 news_symb =news_symb1 +".NS"
                 if symbol == news_symb:
                     news_decision_t = row['Decision']
-                    news_decision_pcr = row['Final Decision']
+                    #news_decision_pcr = row['Final Decision']
                     break
                 else:
                     news_decision_t = 'Hold'  
-                    news_decision_pcr = 'Hold' 
+                   # news_decision_pcr = 'Hold' 
             news_tech = news_decision_t
-            news_pcr = news_decision_pcr                    
+           # news_pcr = news_decision_pcr    
+            news_pcr = 'Hold'                
             
             # Determine final decision based on sentiment
             decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix,news_tech,news_pcr)
@@ -921,6 +991,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
+    app.run(debug=True)
     
-    app.run(debug=True, host='0.0.0.0', port=80)
+    #app.run(debug=True, host='0.0.0.0', port=80)

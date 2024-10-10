@@ -26,6 +26,30 @@
         }
     </style>
     <script>
+        // Function to sort the table
+        function sortTable(n, isNumeric = false) {
+            var table = document.querySelector("table");
+            var rows = Array.from(table.rows).slice(1); // Get all rows except the header row
+            var ascending = table.getAttribute("data-sort-direction") === "asc";
+            
+            rows.sort(function(row1, row2) {
+                var cell1 = row1.cells[n].innerText;
+                var cell2 = row2.cells[n].innerText;
+
+                if (isNumeric) {
+                    cell1 = parseFloat(cell1) || 0;
+                    cell2 = parseFloat(cell2) || 0;
+                }
+
+                return ascending ? cell1.localeCompare(cell2, undefined, { numeric: isNumeric }) : cell2.localeCompare(cell1, undefined, { numeric: isNumeric });
+            });
+
+            // Append sorted rows back to the table
+            rows.forEach(row => table.appendChild(row));
+
+            // Toggle sort direction
+            table.setAttribute("data-sort-direction", ascending ? "desc" : "asc");
+        }
         var refreshInterval; // Variable to hold the interval ID
 
         // Function to start or resume auto-refresh
@@ -236,14 +260,12 @@ function checkAlerts() {
             <thead>
                 <tr>
                     <th>Watchlist</th>
-                    <th>Symbol</th>
-                    <th>LTP</th>
-                    <th>Change %</th>
-                    <th>Target</th>
-                    <th>Stoploss</th>
-                  
-                   
-                    <th>Final Decision</th>
+                    <th onclick="sortTable(1)">Symbol</th>
+                    <th onclick="sortTable(2)">LTP</th>
+                    <th onclick="sortTable(3, true)">Change %</th>
+                    <th onclick="sortTable(4, true)">Target</th>
+                    <th onclick="sortTable(5, true)">Stoploss</th>
+                    <th onclick="sortTable(6)">Final Decision</th>
                     
                     <th>Buy</th>
                     <th>Sell</th>
