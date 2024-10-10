@@ -31,7 +31,7 @@ df_csv_old.columns = df_csv_old.columns.str.strip()
 df_csv_old = df_csv_old.dropna(subset=[df_csv_old.columns[0]], how='all')
 final_decision_news_old = df_csv_old
 #Start for deployment
-import os
+'''import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -41,7 +41,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)
+os.makedirs(cache_dir)'''
 #stop for deployment
 
 app = Flask(__name__)
