@@ -31,8 +31,8 @@ df_csv_old.columns = df_csv_old.columns.str.strip()
 df_csv_old = df_csv_old.dropna(subset=[df_csv_old.columns[0]], how='all')
 final_decision_news_old = df_csv_old
 #Start for deployment
-'''import os
-import shutil
+import os
+'''import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
 if os.path.exists(cache_dir):
@@ -992,5 +992,6 @@ def get_watchlist_symbols():
 
 if __name__ == "__main__":
     #app.run(debug=True)
-    
-    app.run(debug=True, host='0.0.0.0', port=80)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=False, host='0.0.0.0', port=port)
+    #app.run(debug=True, host='0.0.0.0', port=80)

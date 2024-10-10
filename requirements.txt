@@ -8,3 +8,4 @@ lxml
 requests
 ta
 flask_caching
+gunicorn
