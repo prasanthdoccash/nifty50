@@ -684,7 +684,7 @@ def tech_superbuy(intrabuy):
         
         
         
-        if news_tech =='SuperBuy':
+        if news_tech =='SuperBuy' or news_tech =='IntraBuy':
             results1.append(news_symb1)
     return results1
 
