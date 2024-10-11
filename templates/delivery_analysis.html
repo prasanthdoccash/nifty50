@@ -278,11 +278,11 @@ function checkAlerts() {
                 
                 {% if result.LTP <= result.stoploss %}
                     <tr class="stoploss-decision">
-                {% elif result.decision == 'Buy' %}
+                {% elif result.decision == 'Super Buy' %}
                     <tr class="superbuy-decision">
-                {% elif result.decision == 'Intra Buy' or result.decision == 'Super Buy'%}
+                {% elif result.decision == 'Intra Buy'%}
                     <tr class="intrabuy-decision">
-                {% elif result.decision == 'Watch' or result.decision == 'Hold' %}
+                {% elif result.decision == 'Watch' or result.decision == 'Buy' %}
                     <tr class="buy-decision">
                 {% else %}
                     <tr>
