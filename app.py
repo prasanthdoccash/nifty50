@@ -931,7 +931,7 @@ def intraday(symbols_get):
             symbols_NS = symbol[:-3]
             #last_Price ,pChange= fetch_price_data(symbols_NS)
             
-            print(i,symbol)
+            print(i,symbol, "i")
             i=i+1
             # Prepare data for each symbol
             symbol_data = {
@@ -960,8 +960,15 @@ def intraday(symbols_get):
     
     return results,last_refreshed,vix,vix_senti
     
+@app.route('/both')
+def both(): 
+    symb = ''  
+    results_i,last_refreshed,vix,vix_senti = intraday(symb)
     
-    
+    results,last_refreshed,vix,vix_senti = delivery(symb)
+    zipped_results = zip(results, results_i)
+    return render_template('both.html', zipped_results=zipped_results, last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
+   
 @app.route('/intraday')
 def intraday1():
     symb = ''
