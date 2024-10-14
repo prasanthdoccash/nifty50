@@ -31,7 +31,7 @@ df_csv_old.columns = df_csv_old.columns.str.strip()
 df_csv_old = df_csv_old.dropna(subset=[df_csv_old.columns[0]], how='all')
 final_decision_news_old = df_csv_old
 #Start for deployment
-'''import os
+import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
@@ -41,7 +41,7 @@ if os.path.exists(cache_dir):
     print(f"Deleted existing directory '{cache_dir}'.")
 
 # Now create the directory
-os.makedirs(cache_dir)'''
+os.makedirs(cache_dir)
 #stop for deployment
 
 app = Flask(__name__)
@@ -514,7 +514,7 @@ def fetch_delivery_data(symbols, num1):
         if num1 == 0:
             df = stock.history(period="1y", interval="1d") # 30d 1h identifies Stocks for delivery
         else:
-            df = stock.history(period="5d", interval="5m") # 7d 1m identifies Stocks for intraday
+            df = stock.history(period="5d", interval="15m") # 7d 1m identifies Stocks for intraday
         
         df['pe'] = stock.info.get('trailingPE')
         df['eps'] = stock.info.get('trailingEps')
@@ -1021,6 +1021,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    #app.run(debug=True)
 
-    #app.run(debug=True, host='0.0.0.0', port=80)
+    app.run(debug=True, host='0.0.0.0', port=80)
