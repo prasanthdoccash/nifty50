@@ -20,36 +20,16 @@
         .stoploss-decision {
             background-color: rgb(228, 10, 10);
         }
+        .target-decision {
+            background-color: rgb(231, 20, 168);
+        }
         /* Add space between <td> elements */
         td {
             padding-right: 20px; /* Adjust as needed */
         }
     </style>
     <script>
-        // Function to sort the table
-        function sortTable(n, isNumeric = false) {
-            var table = document.querySelector("table");
-            var rows = Array.from(table.rows).slice(1); // Get all rows except the header row
-            var ascending = table.getAttribute("data-sort-direction") === "asc";
-            
-            rows.sort(function(row1, row2) {
-                var cell1 = row1.cells[n].innerText;
-                var cell2 = row2.cells[n].innerText;
-
-                if (isNumeric) {
-                    cell1 = parseFloat(cell1) || 0;
-                    cell2 = parseFloat(cell2) || 0;
-                }
-
-                return ascending ? cell1.localeCompare(cell2, undefined, { numeric: isNumeric }) : cell2.localeCompare(cell1, undefined, { numeric: isNumeric });
-            });
-
-            // Append sorted rows back to the table
-            rows.forEach(row => table.appendChild(row));
-
-            // Toggle sort direction
-            table.setAttribute("data-sort-direction", ascending ? "desc" : "asc");
-        }
+        
         var refreshInterval; // Variable to hold the interval ID
 
         // Function to start or resume auto-refresh
@@ -155,7 +135,7 @@ function checkAlerts() {
                 
                 // Check for changes in RSI Action
                 if (dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) {
-                    message += "RSI changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
+                    message += "Decision changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
                 }
                 
                 // Check for changes in Final Decision Action
@@ -261,7 +241,7 @@ function checkAlerts() {
                 <tr>
                     <th>Watchlist</th>
                     <th onclick="sortTable(1)">Symbol</th>
-                    <th onclick="sortTable(2)">LTP</th>
+                    <th onclick="sortTable(2)">Close Price</th>
                     <th onclick="sortTable(3, true)">Change %</th>
                     <th onclick="sortTable(4, true)">Target</th>
                     <th onclick="sortTable(5, true)">Stoploss</th>
@@ -278,6 +258,8 @@ function checkAlerts() {
                 
                 {% if result.LTP <= result.stoploss %}
                     <tr class="stoploss-decision">
+                {% elif result.LTP >= result.target %}
+                        <tr class="buy-decision">
                 {% elif result.decision == 'Super Buy' %}
                     <tr class="superbuy-decision">
                 {% elif result.decision == 'Intra Buy'%}
@@ -290,9 +272,10 @@ function checkAlerts() {
                 
                     <td><input type="checkbox" name="watchlist" value="{{ result.symbol }}"></td>
                     <td>{{ result.symbol }}</td>
+                    
                     <td>{{ result.LTP }}</td>
                     <td>{{ result.pChange }}</td>
-                    <td>{{ result.price_target }}</td>
+                    <td>{{ result.target }}</td>
                     <td>{{ result.stoploss }}</td>
                    
                     <td>{{ result.decision }}</td>

@@ -31,8 +31,8 @@ df_csv_old.columns = df_csv_old.columns.str.strip()
 df_csv_old = df_csv_old.dropna(subset=[df_csv_old.columns[0]], how='all')
 final_decision_news_old = df_csv_old
 #Start for deployment
-import os
-'''import shutil
+'''import os
+import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
 # Check if the directory exists
 if os.path.exists(cache_dir):
@@ -496,6 +496,8 @@ def final_decision(df,vix,news_tech,news_pcr):
     if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and 'Tech SuperBuy' in buy and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
     
+    if decision == 'Super Buy' and 'Volume Trend Decrease' in sell:
+        decision = 'Buy'
     return decision,buy_signals,sell_signals,hold_signals, buy,sell,hold
     
 
@@ -570,18 +572,18 @@ def fetch_single_symbol_data(symbol, num1):
 
     return df if not df.empty else None
 
-def fetch_price_data(symbol):
-    dq = {}
+# def fetch_price_data(symbol):
+#     dq = {}
     
-    q = nse.stock_quote(symbol)
+#     q = nse.stock_quote(symbol)
     
-    dq[symbol] =  q['priceInfo']
+#     dq[symbol] =  q['priceInfo']
     
-    lastPrice =float(dq[symbol].get('lastPrice', 0))
+#     lastPrice =float(dq[symbol].get('lastPrice', 0))
     
-    pChange =float(dq[symbol].get('pChange', 0))
-    pChange =round(pChange,2)
-    return lastPrice ,pChange
+#     pChange =float(dq[symbol].get('pChange', 0))
+#     pChange =round(pChange,2)
+#     return lastPrice ,pChange
 
 def calculate_roc(df, window=12):
     df['ROC'] = ta.momentum.roc(df['CLOSE'], window=12)
@@ -765,11 +767,18 @@ def delivery(symbols_get):
 
             df = calculate_indicators(df,now)
             
-            target = df['resistance'].iloc[-1]
-            target=round(target,2)
-            stoploss = df['support'].iloc[-1]
+            last_Price = round(df['Close'].iloc[-1],2)
+            
+            open_price = df['Open'].iloc[-1]
+            open_price=round(open_price,2)
+            stoploss = open_price - (open_price*0.01)
             stoploss=round(stoploss,2)
-                                
+            pChange = last_Price - open_price
+            pChange=round((pChange/open_price)*100,2)   
+
+            target = open_price + (open_price*0.012)
+            target = round(target,2)
+
             # for index, row in final_decision_news.iterrows():
                 
             #     news_symb1 =row['Stock Symbol']
@@ -787,7 +796,7 @@ def delivery(symbols_get):
             decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix,news_tech,news_pcr)
 
             symbols_NS = symbol[:-3]
-            last_Price,pChange = fetch_price_data(symbols_NS)
+            #last_Price,pChange = fetch_price_data(symbols_NS)
         
         
            # decision = "Buy"
@@ -797,12 +806,12 @@ def delivery(symbols_get):
             symbol_data = {
                 'symbol': symbol,
                 #'company_name': company_name,
-                'LTP': last_Price,
+                'LTP': last_Price, #close price
                 'pChange':pChange,
                 #'indicators_data': indicators,
                 #'sentiment': sentiment,
                 'decision': decision,
-                'price_target': target,
+                'target': target,
                 'stoploss':stoploss,
                 
                 
@@ -873,6 +882,17 @@ def intraday(symbols_get):
             # Calculate indicators
             
             df = calculate_indicators(df,new)
+            last_Price = round(df['Close'].iloc[-1],2)
+            
+            open_price = df['Open'].iloc[-1]
+            open_price=round(open_price,2)
+            stoploss = open_price - (open_price*0.01)
+            stoploss=round(stoploss,2)
+            pChange = last_Price - open_price
+            pChange=round((pChange/open_price)*100,2)   
+
+            target = open_price + (open_price*0.012)
+            target = round(target,2)
             #supertrend = apply_supertrend_strategy(df)
 
             # target = df['resistance'].iloc[-1]
@@ -899,7 +919,7 @@ def intraday(symbols_get):
             decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix,news_tech,news_pcr)
 
             symbols_NS = symbol[:-3]
-            last_Price ,pChange= fetch_price_data(symbols_NS)
+            #last_Price ,pChange= fetch_price_data(symbols_NS)
             
             
 
@@ -912,8 +932,8 @@ def intraday(symbols_get):
                 #'indicators_data': indicators,
                 #'sentiment': sentiment,
                 'decision': decision,
-                #'price_target': target,
-                'buy_signals':supertrend,
+                'price_target': target,
+                'Stoploss':stoploss,
                 # 'sell_signals':sell_signals,
                 # 'hold_signal':hold_signals,
                 'buy':buy,
@@ -991,7 +1011,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
-    port = int(os.environ.get('PORT', 5000))
-    app.run(debug=False, host='0.0.0.0', port=port)
+    app.run(debug=True)
+
     #app.run(debug=True, host='0.0.0.0', port=80)
