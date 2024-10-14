@@ -856,12 +856,26 @@ def intraday(symbols_get):
         # Get symbols from predefined or request
         symbols_list = symbols_get
         symbols = symbols_list if symbols_list else predefined_symbols
-        symbols = [symbols]
     else:
-        
         symbols1 = request.args.get('symbols')
         
-        symbols = symbols1.split(',') if symbols1 else predefined_symbols
+        if symbols1 == 'small':
+            symbols =predefined_symbols_s
+            #symbols = symbols1 if symbols1 else predefined_symbols
+        elif symbols1 == 'nifty50':
+            symbols =predefined_symbols
+        elif symbols1 == '500':
+            symbols = predefined_symbols_500
+        elif symbols1 == 'mid':
+            symbols = predefined_symbols_m
+        elif symbols1 == 'superbuy':
+            
+            symbols = tech_superbuy(0)
+        elif symbols1 == 'intrabuy':
+            
+            symbols = tech_superbuy(1)
+        else:
+            symbols = symbols1.split(',') if symbols1 else predefined_symbols
     
     
     
@@ -872,11 +886,11 @@ def intraday(symbols_get):
     results = []
     new=5
     
-    
+    i=1
     for symbol, df in data.items():
 
         try:
-            supertrend = apply_supertrend_strategy(df)
+            #supertrend = apply_supertrend_strategy(df)
             
             
             # Calculate indicators
@@ -884,15 +898,11 @@ def intraday(symbols_get):
             df = calculate_indicators(df,new)
             last_Price = round(df['Close'].iloc[-1],2)
             
-            open_price = df['Open'].iloc[-1]
-            open_price=round(open_price,2)
-            stoploss = open_price - (open_price*0.01)
-            stoploss=round(stoploss,2)
-            pChange = last_Price - open_price
-            pChange=round((pChange/open_price)*100,2)   
+            
+            
+             
 
-            target = open_price + (open_price*0.012)
-            target = round(target,2)
+            
             #supertrend = apply_supertrend_strategy(df)
 
             # target = df['resistance'].iloc[-1]
@@ -921,19 +931,19 @@ def intraday(symbols_get):
             symbols_NS = symbol[:-3]
             #last_Price ,pChange= fetch_price_data(symbols_NS)
             
-            
-
+            print(i,symbol)
+            i=i+1
             # Prepare data for each symbol
             symbol_data = {
                 'symbol': symbol,
                 #'company_name': company_name,
                 'LTP': last_Price,
-                'pChange':pChange,
+                #'pChange':pChange,
                 #'indicators_data': indicators,
                 #'sentiment': sentiment,
                 'decision': decision,
-                'price_target': target,
-                'Stoploss':stoploss,
+                #'supertrend': supertrend,
+                #'stoploss':stoploss,
                 # 'sell_signals':sell_signals,
                 # 'hold_signal':hold_signals,
                 'buy':buy,

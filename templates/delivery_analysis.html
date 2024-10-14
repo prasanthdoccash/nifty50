@@ -240,12 +240,12 @@ function checkAlerts() {
             <thead>
                 <tr>
                     <th>Watchlist</th>
-                    <th onclick="sortTable(1)">Symbol</th>
-                    <th onclick="sortTable(2)">Close Price</th>
-                    <th onclick="sortTable(3, true)">Change %</th>
-                    <th onclick="sortTable(4, true)">Target</th>
-                    <th onclick="sortTable(5, true)">Stoploss</th>
-                    <th onclick="sortTable(6)">Final Decision</th>
+                    <th>Symbol</th>
+                    <th>Close Price</th>
+                    <th>Change %</th>
+                    <th>Target</th>
+                    <th>Stoploss</th>
+                    <th>Final Decision</th>
                     
                     <th>Buy</th>
                     <th>Sell</th>
@@ -258,8 +258,7 @@ function checkAlerts() {
                 
                 {% if result.LTP <= result.stoploss %}
                     <tr class="stoploss-decision">
-                {% elif result.LTP >= result.target %}
-                        <tr class="buy-decision">
+                
                 {% elif result.decision == 'Super Buy' %}
                     <tr class="superbuy-decision">
                 {% elif result.decision == 'Intra Buy'%}
