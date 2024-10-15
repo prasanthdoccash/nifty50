@@ -200,7 +200,7 @@ def calculate_indicators(df,num2=5):
     return df
 
 # Function to make trading decisions
-def final_decision(df,vix,news_tech,news_pcr):
+def final_decision(df,vix,news_tech,news_pcr,pChange =1):
     last_row = df.iloc[-1]
     
     indicators = {
@@ -496,7 +496,7 @@ def final_decision(df,vix,news_tech,news_pcr):
     if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and 'Tech SuperBuy' in buy and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
     
-    if decision == 'Super Buy' and 'Volume Trend Decrease' in sell:
+    if decision == 'Super Buy' and ('Volume Trend Decrease' in sell or pChange <0) :
         decision = 'Buy'
     return decision,buy_signals,sell_signals,hold_signals, buy,sell,hold
     
@@ -514,7 +514,7 @@ def fetch_delivery_data(symbols, num1):
         if num1 == 0:
             df = stock.history(period="1y", interval="1d") # 30d 1h identifies Stocks for delivery
         else:
-            df = stock.history(period="5d", interval="15m") # 7d 1m identifies Stocks for intraday
+            df = stock.history(period="5d", interval="5m") # 7d 1m identifies Stocks for intraday
         
         df['pe'] = stock.info.get('trailingPE')
         df['eps'] = stock.info.get('trailingEps')
@@ -793,7 +793,7 @@ def delivery(symbols_get):
             # news_tech = news_decision_t
             # news_pcr = news_decision_pcr
             # Determine final decision based on sentiment
-            decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix,news_tech,news_pcr)
+            decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix,news_tech,news_pcr,pChange)
 
             symbols_NS = symbol[:-3]
             #last_Price,pChange = fetch_price_data(symbols_NS)
