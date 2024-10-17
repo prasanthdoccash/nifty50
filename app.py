@@ -483,17 +483,17 @@ def final_decision(df,vix,news_tech,news_pcr,pChange =1):
     elif 'supertrend' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Buy'
     
-    if ('supertrend' in buy or 'supertrend' in hold) and 'Tech SuperBuy' in buy and ('Buy' in buy or 'Super Buy' in buy):
+    if ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy) and ('Buy' in buy or 'Super Buy' in buy):
         decision = 'Buy'
 
-    if ('supertrend' in buy or 'supertrend' in hold) and 'Tech SuperBuy' in buy and ('Buy' in buy or 'Super Buy' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
+    if ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy) and ('Buy' in buy or 'Super Buy' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
-    elif 'supertrend' in hold and 'Tech SuperBuy' in buy and 'Hold' in buy and (decision == 'Buy' or decision == 'Super Buy'):
+    elif 'supertrend' in hold and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy) and 'Hold' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Buy'
-    elif ('supertrend' in buy or 'supertrend' in hold) and 'Tech SuperBuy' in buy and ('Sell' in buy or 'PE' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
+    elif ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy) and ('Sell' in buy or 'PE' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Watch'
      
-    if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and 'Tech SuperBuy' in buy and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy'):
+    if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy) and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
     
     if decision == 'Super Buy' and ('Volume Trend Decrease' in sell or pChange <0) :
@@ -681,8 +681,8 @@ def tech_superbuy(intrabuy):
         tech_stock_symbol =row['Stock Symbol']
         news_symb1 =tech_stock_symbol +".NS"
         
-        news_tech = row['Decision']
-         
+        news_tech = row['Final Output']
+        
         
         
         
@@ -746,20 +746,30 @@ def delivery(symbols_get):
     results = []
     now = 0
     i=1
+    if symbols1 == 'intrabuy':
+        
+        final_decision_news1 = final_decision_news_old
+    else:
+        final_decision_news1 = final_decision_news
+
     for symbol, df in data.items():
         try:
+
             # Calculate indicators
-            for index, row in final_decision_news.iterrows():
+            for index, row in final_decision_news1.iterrows():
                     
                 news_symb =row['Stock Symbol']
                 news_symb1 =news_symb +".NS"
+                
                 if symbol == news_symb1:
-                    news_decision_t = row['Decision']
+                    news_decision_t = row['Final Output']
+                    
                     #news_decision_pcr = row['Final Decision']
                     break
                 else:
                     news_decision_t = 'Hold'  
                     #news_decision_pcr = 'Hold' 
+            
             news_tech = news_decision_t
             #news_pcr = news_decision_pcr
             news_pcr = 'Hold'  
@@ -877,7 +887,11 @@ def intraday(symbols_get):
         else:
             symbols = symbols1.split(',') if symbols1 else predefined_symbols
     
-    
+    if symbols1 == 'intrabuy':
+        
+        final_decision_news1 = final_decision_news_old
+    else:
+        final_decision_news1 = final_decision_news
     
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -915,7 +929,7 @@ def intraday(symbols_get):
                 news_symb1 =row['Stock Symbol']
                 news_symb =news_symb1 +".NS"
                 if symbol == news_symb:
-                    news_decision_t = row['Decision']
+                    news_decision_t = row['Final Output']
                     #news_decision_pcr = row['Final Decision']
                     break
                 else:
