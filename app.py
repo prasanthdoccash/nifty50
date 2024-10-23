@@ -294,9 +294,12 @@ def final_decision(df,vix,news_tech,news_pcr,pChange =1):
     elif news_tech == 'Buy':
         buy_signals += 1
         buy.append('Tech Buy')
+    elif news_tech == 'Watch':
+        buy_signals += 1
+        buy.append('Tech Watch')
     else:
         hold_signals += 1
-        hold.append('Tech Watch')
+        hold.append('Tech Hold')
         
     if news_pcr == 'SuperBuy':
         buy_signals += 2
@@ -485,20 +488,20 @@ def final_decision(df,vix,news_tech,news_pcr,pChange =1):
     elif 'supertrend' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Watch'
     
-    if ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy) and  'Super Buy' in buy:
+    if ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and  'Super Buy' in buy:
         decision = 'Super Buy'
-    if ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy) and 'Buy' in buy :
+    if ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'Buy' in buy :
         decision = 'Watch'
 
-    if 'supertrend' in buy  and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy) and ('Buy' in buy or 'Super Buy' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
+    if 'supertrend' in buy  and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and ('Buy' in buy or 'Super Buy' in buy ) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
-    elif 'supertrend' in hold and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy) and 'Hold' in buy and (decision == 'Buy' or decision == 'Super Buy'):
+    elif 'supertrend' in hold and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'Hold' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Watch'
-    elif ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy) and ('Sell' in buy or 'PE' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
+    elif ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and ('Sell' in buy or 'PE' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Hold'
     #if ('supertrend' in hold and sell_signals <=3 and (decision == 'Buy' or decision == 'Super Buy')):
       #  decision = 'Super Buy'
-    if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy) and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy') and 'BOLLINGER' not in sell:
+    if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy') and 'BOLLINGER' not in sell:
         decision = 'Super Buy'
     
     if decision == 'Super Buy' and ('Volume Trend Decrease' in sell or pChange <0) :
@@ -506,7 +509,7 @@ def final_decision(df,vix,news_tech,news_pcr,pChange =1):
 
     if decision == 'Super Buy' and 'Tech IntraBuy' in buy:
         decision = 'Intra Buy'
-    if decision == 'Super Buy' and 'Tech Buy' in buy:
+    if decision == 'Super Buy' and ('Tech Buy' in buy or 'Tech Watch' in buy):
         decision = 'Buy'
     return decision,buy_signals,sell_signals,hold_signals, buy,sell,hold
     
@@ -695,7 +698,7 @@ def tech_superbuy():
         
         
         
-        if news_tech =='SuperBuy' or news_tech =='IntraBuy'or news_tech =='Buy':
+        if news_tech =='SuperBuy' or news_tech =='IntraBuy'or news_tech =='Buy' or news_tech =='Watch':
             results1.append(news_symb1)
     return results1
 
