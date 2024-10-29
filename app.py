@@ -504,7 +504,7 @@ def final_decision(df,vix,news_tech,news_pcr,pChange =1):
     if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy') and 'BOLLINGER' not in sell:
         decision = 'Super Buy'
     
-    if decision == 'Super Buy' and ('Volume Trend Decrease' in sell and pChange <0) :
+    if decision == 'Super Buy' and ('Volume Trend Decrease' in sell and pChange <0.5) :
         decision = 'Watch'
 
     if decision == 'Super Buy' and 'Tech IntraBuy' in buy:
