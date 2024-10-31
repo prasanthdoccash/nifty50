@@ -3,7 +3,7 @@ import datetime as dt
 from jugaad_data.nse import NSELive,stock_df
 import pandas as pd
 import ta
-from datetime import date, timedelta
+from datetime import date, timedelta,datetime
 import numpy as np
 import yfinance as yf
 from ta.momentum import RSIIndicator, StochasticOscillator
@@ -12,6 +12,8 @@ from ta.volatility import BollingerBands
 import json
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+
+import concurrent.futures
 from functools import lru_cache
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
@@ -119,7 +121,7 @@ def apply_supertrend_strategy(df):
             df['Final Signal'][-1] = 'Sell'
     
     return df['Final Signal'][-1]
-def calculate_indicators(df,num2=5):
+def calculate_indicators(df,num2=5,windows=14):
     
     if num2 == 5: #delivery
     #     df =  df[(df.index.hour == 0) & (df.index.minute == 0)] 
@@ -133,23 +135,23 @@ def calculate_indicators(df,num2=5):
     df['average_pe'] = np.mean(df['historical_pe'])
     #print("df['average_pe']",df['average_pe'])
     
-    df['rsi'] = RSIIndicator(df['Close'], window=14).rsi()
+    df['rsi'] = RSIIndicator(df['Close'], window=windows).rsi()
     
     macd = MACD(df['Close'], window_slow=26, window_fast=12, window_sign=9)
     df['macd'] = macd.macd()
     df['macd_signal'] = macd.macd_signal()
     df['macd_diff'] = macd.macd_diff()
-    df['ema'] = EMAIndicator(df['Close'], window=14).ema_indicator()
-    df['sma'] = SMAIndicator(df['Close'], window=14).sma_indicator()
+    df['ema'] = EMAIndicator(df['Close'], window=windows).ema_indicator()
+    df['sma'] = SMAIndicator(df['Close'], window=windows).sma_indicator()
     bollinger = BollingerBands(df['Close'], window=20, window_dev=2)
     df['bollinger_high'] = bollinger.bollinger_hband()
     df['bollinger_low'] = bollinger.bollinger_lband()
-    #df['adx'] = ADXIndicator(df['High'], df['Low'], df['Close'], window=14).adx()
+    #df['adx'] = ADXIndicator(df['High'], df['Low'], df['Close'], window=windows).adx()
     # Calculate ADX, +DI, and -DI using ta library
-    df['adx1'] = ta.trend.adx(df['High'], df['Low'], df['Close'], window=14)
-    df['DI+'] = ta.trend.adx_pos(df['High'], df['Low'], df['Close'], window=14)
+    df['adx1'] = ta.trend.adx(df['High'], df['Low'], df['Close'], window=windows)
+    df['DI+'] = ta.trend.adx_pos(df['High'], df['Low'], df['Close'], window=windows)
     
-    df['DI-'] = ta.trend.adx_neg(df['High'], df['Low'], df['Close'], window=14)
+    df['DI-'] = ta.trend.adx_neg(df['High'], df['Low'], df['Close'], window=windows)
    
     # Calculate the divergence between EMA and SMA
     df['ema_sma_divergence'] = df['ema'] - df['sma']
@@ -166,8 +168,8 @@ def calculate_indicators(df,num2=5):
     df['adx'] = (df['adx1'] > 20) & (df['DI+'] > df['DI-']) & (df['DI+'].shift(1) <= df['DI-'].shift(1))
     
     # Calculate the lowest low and highest high over the look-back period (k_period)
-    df['Lowest_Low'] = df['Low'].rolling(window=14).min()
-    df['Highest_High'] = df['High'].rolling(window=14).max()
+    df['Lowest_Low'] = df['Low'].rolling(window=windows).min()
+    df['Highest_High'] = df['High'].rolling(window=windows).max()
     
     
     # Calculate %K
@@ -182,7 +184,7 @@ def calculate_indicators(df,num2=5):
         low=df['Low'],
         close=df['Close'],
         volume=df['Volume'],
-        window=14,  # the window parameter, you can adjust this based on your needs
+        window=windows,  # the window parameter, you can adjust this based on your needs
         fillna=True  # handle NaN values
     )
     df['vwap'] = vwap_indicator.vwap
@@ -198,7 +200,7 @@ def calculate_indicators(df,num2=5):
     return df
 
 # Function to make trading decisions
-def final_decision(df,vix,news_tech,news_pcr,pChange =1):
+def final_decision(df,vix,news_tech,news_pcr,pChange):
     last_row = df.iloc[-1]
     
     indicators = {
@@ -481,35 +483,35 @@ def final_decision(df,vix,news_tech,news_pcr,pChange =1):
     if 'Hold' in buy and ('supertrend' in hold or 'supertrend' in buy):
         decision = 'Hold'
 
-    if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'RSI' in buy and 'MACD Cross' in buy and  'Strong ROC Buy' in buy and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
+    if pChange >1 and 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'RSI' in buy and 'MACD Cross' in buy and  'Strong ROC Buy' in buy and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
-    elif 'supertrend' in buy and 'PCR SuperBuy' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
+    elif pChange >1 and 'supertrend' in buy and 'PCR SuperBuy' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
     elif 'supertrend' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Watch'
     
-    if ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and  'Super Buy' in buy:
+    if pChange >1 and ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and  'Super Buy' in buy:
         decision = 'Super Buy'
     if ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'Buy' in buy :
         decision = 'Watch'
 
-    if 'supertrend' in buy  and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and ('Buy' in buy or 'Super Buy' in buy ) and (decision == 'Buy' or decision == 'Super Buy'):
+    if pChange >1 and 'supertrend' in buy  and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and ('Buy' in buy or 'Super Buy' in buy ) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
-    elif 'supertrend' in hold and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'Hold' in buy and (decision == 'Buy' or decision == 'Super Buy'):
+    elif pChange >1 and 'supertrend' in hold and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'Hold' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Watch'
     elif ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and ('Sell' in buy or 'PE' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Hold'
     #if ('supertrend' in hold and sell_signals <=3 and (decision == 'Buy' or decision == 'Super Buy')):
       #  decision = 'Super Buy'
-    if 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy') and 'BOLLINGER' not in sell:
+    if pChange >1 and 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy') and 'BOLLINGER' not in sell:
         decision = 'Super Buy'
     
-    if decision == 'Super Buy' and ('Volume Trend Decrease' in sell and pChange <0.5) :
+    if decision == 'Super Buy' and  ('Volume Trend Decrease' in sell and pChange <1) :
         decision = 'Watch'
 
     if decision == 'Super Buy' and 'Tech IntraBuy' in buy:
         decision = 'Intra Buy'
-    if decision == 'Super Buy' and ('Tech Buy' in buy or 'Tech Watch' in buy):
+    if pChange >1 and decision == 'Super Buy' and ('Tech Buy' in buy or 'Tech Watch' in buy):
         decision = 'Buy'
     return decision,buy_signals,sell_signals,hold_signals, buy,sell,hold
     
@@ -525,7 +527,7 @@ def fetch_delivery_data(symbols, num1):
         
         stock = yf.Ticker(symbol)
         if num1 == 0:
-            df = stock.history(period="1y", interval="1d") # 30d 1h identifies Stocks for delivery
+            df = stock.history(period="1mo", interval="15m") # 30d 1h identifies Stocks for delivery
         else:
             df = stock.history(period="5d", interval="15m") # 7d 1m identifies Stocks for intraday
         
@@ -570,7 +572,7 @@ def fetch_single_symbol_data(symbol, num1):
     if num1 == 0:
         df = stock.history(period="1y", interval="1d")
     else:
-        df = stock.history(period="5d", interval="5m")
+        df = stock.history(period="5d", interval="15m")
 
     df['pe'] = stock.info.get('trailingPE')
     df['eps'] = stock.info.get('trailingEps')
@@ -717,6 +719,10 @@ def input_symbol():
             return redirect(url_for('delivery', symbols=symbols))
     
     return render_template('input_symbol.html')
+#today = datetime.now().strftime('%Y-%m-%d')
+
+
+yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 
 
 #@app.route('/delivery')
@@ -752,7 +758,7 @@ def delivery(symbols_get):
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     data = fetch_delivery_data(symbols,0)
-    
+       
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
     now = 0
@@ -789,7 +795,10 @@ def delivery(symbols_get):
             
             last_Price = round(df['Close'].iloc[-1],2)
             
-            open_price = df['Open'].iloc[-1]
+            #open_price = df['Open'].iloc[-1]
+            # Select the 9:15 AM data for today
+            open_price = df['Close'].loc[yesterday].iloc[-1]
+            
             open_price=round(open_price,2)
             stoploss = open_price - (open_price*0.01)
             stoploss=round(stoploss,2)
@@ -820,7 +829,7 @@ def delivery(symbols_get):
         
         
            # decision = "Buy"
-            print(i,symbol)
+            print(i,symbol,decision)
             i=i+1
             # Prepare data for each symbol
             symbol_data = {
@@ -913,10 +922,20 @@ def intraday(symbols_get):
             
             # Calculate indicators
             
-            df = calculate_indicators(df,new)
+            df = calculate_indicators(df,new,7)
             last_Price = round(df['Close'].iloc[-1],2)
             
+           
             
+            #open_price = df['Open'].iloc[-1]
+            # Select the 9:15 AM data for today
+            open_price = df['Close'].loc[yesterday].iloc[-1]
+            
+            open_price=round(open_price,2)
+            stoploss = open_price - (open_price*0.01)
+            stoploss=round(stoploss,2)
+            pChange = last_Price - open_price
+            pChange=round((pChange/open_price)*100,2)   
             
              
 
@@ -944,19 +963,19 @@ def intraday(symbols_get):
             news_pcr = 'Hold'                
             
             # Determine final decision based on sentiment
-            decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix,news_tech,news_pcr)
+            decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix,news_tech,news_pcr,pChange)
 
             symbols_NS = symbol[:-3]
             #last_Price ,pChange= fetch_price_data(symbols_NS)
             
-            print(i,symbol, "i")
+            print(i,symbol, decision,"i")
             i=i+1
             # Prepare data for each symbol
             symbol_data = {
                 'symbol': symbol,
                 #'company_name': company_name,
                 'LTP': last_Price,
-                #'pChange':pChange,
+                'pChange':pChange,
                 #'indicators_data': indicators,
                 #'sentiment': sentiment,
                 'decision': decision,

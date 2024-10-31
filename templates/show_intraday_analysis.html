@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Intraday Analysis</title>
+    <title>Stock Analysis</title>
     <!-- Include Bootstrap CSS for styling -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     
@@ -29,13 +29,14 @@
         }
     </style>
     <script>
+        
         var refreshInterval; // Variable to hold the interval ID
 
         // Function to start or resume auto-refresh
         function startAutoRefresh() {
             refreshInterval = setInterval(function() {
                 location.reload();
-            }, 20000); // 120000 milliseconds = 2 minutes
+            }, 25000); // 120000 milliseconds = 2 minutes
             updateRefreshTime(); // Update timestamp immediately on start
             document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
         }
@@ -73,7 +74,7 @@
             var encodedUri = encodeURI(csvContent);
             var link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "Intraday_analysis.csv");
+            link.setAttribute("download", "Delivery_analysis.csv");
             document.body.appendChild(link);
             link.click();
         }
@@ -117,10 +118,13 @@ function checkAlerts() {
         if (cells.length >= 8) { // Adjust based on your table structure
             var symbol = cells[1].innerText.trim(); // Symbol column
             var RSIAction = cells[1].innerText.trim(); // RSI column
-            var DecisionAction = cells[7].innerText.trim(); // Final Decision column
+            var DecisionAction = cells[6].innerText.trim(); // Final Decision column
             var MACDAction = cells[1].innerText.trim(); // MACD Action column
 
-            
+            console.log("Symbol:", symbol);
+            console.log("RSIAction:", RSIAction);
+            console.log("DecisionAction:", DecisionAction);
+            console.log("MACDAction:", MACDAction);
 
             // Check if previous action exists for this symbol and if it's different
             if ((dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) || 
@@ -131,7 +135,7 @@ function checkAlerts() {
                 
                 // Check for changes in RSI Action
                 if (dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) {
-                    message += "RSI changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
+                    message += "Decision changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
                 }
                 
                 // Check for changes in Final Decision Action
@@ -170,7 +174,7 @@ function checkAlerts() {
     </script>
     <script>
         function showWatchlist() {
-            window.location.href = '/show_watchlist_int';
+            window.location.href = '/show_watchlist';
         }
     </script>
 </head>
@@ -190,13 +194,14 @@ function checkAlerts() {
                     <a class="nav-link" href="/input_symbol">Search</a>
                 </li>
                 <li class="nav-item active">
-                    <a class="nav-link" href="/delivery">Delivery</a>
+                    <a class="nav-link" href="/delivery">Stock</a>
                 </li>
                 <li class="nav-item active">
                     <a class="nav-link" href="/intraday">Intraday</a>
                 </li>
+                
                 <li class="nav-item">
-                    <a class="nav-link" href="/show_watchlist_int">Watchlist</a>
+                    <a class="nav-link" href="/show_watchlist_int">Intra Watchlist</a>
                 </li>
             </ul>
         </div>
@@ -223,7 +228,7 @@ function checkAlerts() {
         <div id="watchlistContainer"></div>
     </div>
     <div class="container">
-        <h1>Intraday Analysis</h1>
+        <h1>Stock Analysis</h1>
         <p>Last Refreshed: {{ last_refreshed }}</p>
         <h5><b>Important Indicators:</b> </h5>
         <h6><b>Buy:</b> When in Orange or Blue
@@ -233,18 +238,16 @@ function checkAlerts() {
             <thead>
                 <tr>
                     <th>Watchlist</th>
-                    <th>Symbol</th>
-                    <th>LTP</th>
+                    <th onclick="sortTable(1)">Symbol</th>
+                    <th onclick="sortTable(2)">Close Price</th>
+                    <th onclick="sortTable(3, true)">Change %</th>
                     
-                    
-                    
-                    
-                    
-                    <th>Final Decision</th>
+                    <th onclick="sortTable(6)">Final Decision</th>
                     
                     <th>Buy</th>
                     <th>Sell</th>
                     <th>Hold</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -253,7 +256,7 @@ function checkAlerts() {
                 {% if result.LTP <= result.stoploss %}
                     <tr class="stoploss-decision">
                 {% elif result.LTP >= result.target %}
-                        <tr class="buy-decision">
+                        <tr class="target-decision">
                 {% elif result.decision == 'Super Buy' %}
                     <tr class="superbuy-decision">
                 {% elif result.decision == 'Intra Buy'%}
@@ -263,18 +266,25 @@ function checkAlerts() {
                 {% else %}
                     <tr>
                 {% endif %}
+                
                     <td><input type="checkbox" name="watchlist" value="{{ result.symbol }}"></td>
                     <td>{{ result.symbol }}</td>
+                    
                     <td>{{ result.LTP }}</td>
-                    
-                    
-                    
-                    
+                    <td>{{ result.pChange }}</td>
+                   
+                   
                     <td>{{ result.decision }}</td>
                     
                     <td>{{ result.buy }}</td>
                     <td>{{ result.sell }}</td>
                     <td>{{ result.hold }}</td>
+                    <td>
+                        <!-- Add form for the button -->
+                        <form action="/analysis/{{ result.symbol }}" method="get" target="_blank">
+                            <button type="submit" class="btn btn-primary">Analyze</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
