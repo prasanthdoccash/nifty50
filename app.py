@@ -17,9 +17,7 @@ from functools import lru_cache
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
 
-from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
+
 
 #Start for deploymentt
 import os
@@ -39,7 +37,9 @@ os.makedirs(cache_dir)
 #final_decision_news = merger()
 
 def predict(df):
-
+    from sklearn.preprocessing import MinMaxScaler
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import LSTM, Dense
     
     if df.empty:
         return "No data found for the given stock symbol."
