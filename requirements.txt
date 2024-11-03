@@ -8,4 +8,6 @@ lxml
 requests
 ta
 flask_caching
-gunicorn
+numpy
+sklearn.preprocessing
+tensorflow
