@@ -12,24 +12,15 @@ from ta.volatility import BollingerBands
 import json
 import warnings
 from concurrent.futures import ThreadPoolExecutor
-
 import concurrent.futures
 from functools import lru_cache
 warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
-#from news import merger
-#final_decision_news = merger()
 
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
 
-def trendlyne():
-    
-    csv_file = 'merged_output.csv'
-    
-    df_csv = pd.read_csv(csv_file)
-    df_csv.columns = df_csv.columns.str.strip()
-    df_csv = df_csv.dropna(subset=[df_csv.columns[0]], how='all')
-    final_decision_news = df_csv
-    return final_decision_news
 #Start for deployment
 import os
 import shutil
@@ -43,6 +34,63 @@ if os.path.exists(cache_dir):
 # Now create the directory
 os.makedirs(cache_dir)
 #stop for deployment
+
+#from news import merger
+#final_decision_news = merger()
+
+def predict(df):
+
+    
+    if df.empty:
+        return "No data found for the given stock symbol."
+    
+    # Preprocess the data
+    df['Close'] = df['Close'].fillna(method='ffill')  # Handle NaNs
+    scaler = MinMaxScaler(feature_range=(0, 1))
+    scaled_data = scaler.fit_transform(df['Close'].values.reshape(-1, 1))
+    
+    # Prepare training data
+    X_train = []
+    y_train = []
+    for i in range(365, len(scaled_data)):  # Use 60 days as the input sequence
+        X_train.append(scaled_data[i-60:i, 0])
+        y_train.append(scaled_data[i, 0])
+    X_train, y_train = np.array(X_train), np.array(y_train)
+    X_train = X_train.reshape(X_train.shape[0], X_train.shape[1], 1)
+    
+    # Build LSTM model
+    model = Sequential()
+    model.add(LSTM(units=50, return_sequences=False, input_shape=(X_train.shape[1], 1)))
+    model.add(Dense(units=1))
+    
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(X_train, y_train, epochs=10, batch_size=32)
+    
+    # Prepare data for prediction
+    last_60_days = scaled_data[-60:]
+    last_60_days = last_60_days.reshape(1, -1)
+    last_60_days = last_60_days.reshape((1, last_60_days.shape[1], 1))
+    
+    # Predict the next day's price
+    predicted_price_scaled = model.predict(last_60_days)
+    predicted_price = scaler.inverse_transform(predicted_price_scaled)
+    
+    # Display the result
+   # result = f"Predicted price for the next day for {symbol}: {predicted_price[0][0]:.2f}"
+    #return result
+    print(predicted_price[0][0])
+    return predicted_price[0][0]
+
+def trendlyne():
+    
+    csv_file = 'merged_output.csv'
+    
+    df_csv = pd.read_csv(csv_file)
+    df_csv.columns = df_csv.columns.str.strip()
+    df_csv = df_csv.dropna(subset=[df_csv.columns[0]], how='all')
+    final_decision_news = df_csv
+    return final_decision_news
+
 
 app = Flask(__name__)
 def calculate_supertrend(df, atr_period, multiplier):
@@ -197,6 +245,7 @@ def calculate_indicators(df,num2=5,windows=14):
         lbp=14,  # look-back period, commonly set to 14
         fillna=True  # handle NaN values
     ).williams_r()
+   
     return df
 
 # Function to make trading decisions
@@ -547,45 +596,7 @@ def fetch_delivery_data(symbols, num1):
     
     return all_data
 
-# New function to handle parallel processing
-def fetch_delivery_data_parallel(symbols, num1):
-    all_data = {}
-    
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        # Create a future for each symbol
-        future_to_symbol = {executor.submit(fetch_single_symbol_data, symbol, num1): symbol for symbol in symbols}
-        
-        for future in concurrent.futures.as_completed(future_to_symbol):
-            symbol = future_to_symbol[future]
-            try:
-                data = future.result()
-                if data is not None:
-                    all_data[symbol] = data
-            except Exception as e:
-                print(f"Error fetching data for {symbol}: {e}")
-    
-    return all_data
 
-# Helper function to fetch data for a single symbol
-def fetch_single_symbol_data(symbol, num1):
-    stock = yf.Ticker(symbol)
-    if num1 == 0:
-        df = stock.history(period="1y", interval="1d")
-    else:
-        df = stock.history(period="5d", interval="15m")
-
-    df['pe'] = stock.info.get('trailingPE')
-    df['eps'] = stock.info.get('trailingEps')
-
-    if not df.empty:
-        checkpe = df['pe'].iloc[-1]
-        checkeps = df['eps'].iloc[-1]
-        if checkpe is None:
-            df['pe'] = 0
-        if checkeps is None:
-            df['eps'] = 0
-
-    return df if not df.empty else None
 
 # def fetch_price_data(symbol):
 #     dq = {}
@@ -600,15 +611,6 @@ def fetch_single_symbol_data(symbol, num1):
 #     pChange =round(pChange,2)
 #     return lastPrice ,pChange
 
-def calculate_roc(df, window=12):
-    df['ROC'] = ta.momentum.roc(df['CLOSE'], window=12)
-    
-    return df
-
-def calculate_volume_trend(df, window=20):
-    if 'VOLUME' in df.columns:
-        df['Volume_Trend'] = df['VOLUME'].rolling(window=20).mean()
-    return df
 
 def calculate_vix(symb):
     #df['VIX'] = ta.volatility.vix(df['HIGH'], df['LOW'], df['CLOSE'])
@@ -704,9 +706,11 @@ def tech_superbuy():
             results1.append(news_symb1)
     return results1
 
+
+
 @app.route('/')
 def home():
-    _,vix,vix_senti = calculate_vix('^INDIAVIX')
+    _,vix,vix_senti = 0,0,0 #calculate_vix('^INDIAVIX')
     return render_template('index.html',vix=vix,vix_senti=vix_senti)
    
 
@@ -723,7 +727,7 @@ def input_symbol():
 
 
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-
+sunday = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
 
 #@app.route('/delivery')
 def delivery(symbols_get):
@@ -758,8 +762,8 @@ def delivery(symbols_get):
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     data = fetch_delivery_data(symbols,0)
-       
-    _,vix,vix_senti = calculate_vix('^INDIAVIX')
+    
+    _,vix,vix_senti = 0,0,0 #calculate_vix('^INDIAVIX')
     results = []
     now = 0
     i=1
@@ -797,7 +801,11 @@ def delivery(symbols_get):
             
             #open_price = df['Open'].iloc[-1]
             # Select the 9:15 AM data for today
-            open_price = df['Close'].loc[yesterday].iloc[-1]
+            
+            try:
+                open_price = df['Close'].loc[yesterday].iloc[-1]
+            except:
+                open_price = df['Close'].loc[sunday].iloc[-1]
             
             open_price=round(open_price,2)
             stoploss = open_price - (open_price*0.01)
@@ -807,7 +815,7 @@ def delivery(symbols_get):
 
             target = open_price + (open_price*0.012)
             target = round(target,2)
-
+            
             # for index, row in final_decision_news.iterrows():
                 
             #     news_symb1 =row['Stock Symbol']
@@ -823,11 +831,11 @@ def delivery(symbols_get):
             # news_pcr = news_decision_pcr
             # Determine final decision based on sentiment
             decision,buy_signals,sell_signals,hold_signals, buy,sell,hold = final_decision(df,vix,news_tech,news_pcr,pChange)
-
+            
             symbols_NS = symbol[:-3]
             #last_Price,pChange = fetch_price_data(symbols_NS)
-        
-        
+            
+            
            # decision = "Buy"
             print(i,symbol,decision)
             i=i+1
@@ -856,7 +864,7 @@ def delivery(symbols_get):
             print(f"KeyError: {str(e)}. Skipping symbol {symbol}.")
             continue
     
-    return results,last_refreshed,vix,vix_senti
+    return results,last_refreshed,vix,vix_senti,df
 
 @app.route('/analysis/<symbol>', methods=['GET'])
 def view_stock_analysis(symbol):
@@ -872,9 +880,18 @@ def view_stock_analysis(symbol):
 @app.route('/delivery')
 def delivery1():
     symb = ''
-    results,last_refreshed,vix,vix_senti = delivery(symb)
+    results,last_refreshed,vix,vix_senti,df = delivery(symb)
     
     return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
+
+@app.route('/predicted_price/<symbol>', methods=['GET'])
+def predicted_price(symbol):
+    
+    symbol = [symbol]
+    results,last_refreshed,vix,vix_senti,df = delivery(symbol)
+    
+    predicted_price = predict(df)
+    return render_template('delivery_analysis1.html',predicted_price=predicted_price ,results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
 
 
 def intraday(symbols_get):
@@ -909,7 +926,7 @@ def intraday(symbols_get):
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     data = fetch_delivery_data(symbols,1)
-    _,vix,vix_senti = calculate_vix('^INDIAVIX')
+    _,vix,vix_senti = 0,0,0 #calculate_vix('^INDIAVIX')
     results = []
     new=5
     

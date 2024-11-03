@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Analysis</title>
+    <!-- Include Bootstrap CSS for styling -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    
+    <style>
+        .buy-decision {
+            background-color: lightgreen;
+        }
+        .superbuy-decision {
+            background-color: rgb(83, 179, 235);
+        }
+        .intrabuy-decision {
+            background-color: rgb(236, 142, 19);
+        }
+        .stoploss-decision {
+            background-color: rgb(228, 10, 10);
+        }
+        .target-decision {
+            background-color: rgb(231, 20, 168);
+        }
+        /* Add space between <td> elements */
+        td {
+            padding-right: 20px; /* Adjust as needed */
+        }
+    </style>
+    <script>
+        
+        var refreshInterval; // Variable to hold the interval ID
+
+        // Function to start or resume auto-refresh
+        function startAutoRefresh() {
+            refreshInterval = setInterval(function() {
+                location.reload();
+            }, 600000); // 120000 milliseconds = 2 minutes
+            updateRefreshTime(); // Update timestamp immediately on start
+            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Enabled';
+        }
+
+        // Function to pause auto-refresh
+        function pauseAutoRefresh() {
+            clearInterval(refreshInterval); // Clear the interval
+            document.getElementById('refreshStatus').innerText = 'Auto Refresh: Paused';
+        }
+
+        // Function to update last refreshed date and time
+        function updateRefreshTime() {
+            var now = new Date();
+            var formattedTime = now.toLocaleString('en-US', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true });
+            var formattedDate = now.toLocaleDateString('en-US');
+            var refreshTime = formattedDate + ' ' + formattedTime;
+            document.getElementById('refreshTime').innerText = 'Last Refreshed: ' + refreshTime;
+        }
+
+        function downloadCSV() {
+            var csv = [];
+            var rows = document.querySelectorAll("table tr");
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = [], cols = rows[i].querySelectorAll("td, th");
+
+                for (var j = 0; j < cols.length; j++) {
+                    row.push(cols[j].innerText);
+                }
+                
+                csv.push(row.join(","));
+            }
+
+            var csvContent = "data:text/csv;charset=utf-8," + csv.join("\n");
+            var encodedUri = encodeURI(csvContent);
+            var link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "Delivery_analysis.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
+
+        function addToWatchlist() {
+            var checkboxes = document.querySelectorAll('input[name="watchlist"]:checked');
+            var symbols = [];
+            checkboxes.forEach((checkbox) => {
+                symbols.push(checkbox.value);
+            });
+
+            if (symbols.length > 0) {
+                fetch('/add_to_watchlist', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ symbols: symbols })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert(data.message);
+                })
+                .catch((error) => {
+                    console.error('Error:', error);
+                });
+            } else {
+                alert('No symbols selected');
+            }
+        }
+        var dpreviousActions = JSON.parse(sessionStorage.getItem('dpreviousActions')) || {};
+var dpreviousActionsM = JSON.parse(sessionStorage.getItem('dpreviousActionsM')) || {};
+var dpreviousActionsMACD = JSON.parse(sessionStorage.getItem('dpreviousActionsMACD')) || {};
+
+function checkAlerts() {
+    var rows = document.querySelectorAll("table tbody tr");
+    rows.forEach(row => {
+        var cells = row.querySelectorAll("td");
+
+        // Ensure cells exist and have the necessary data
+        if (cells.length >= 8) { // Adjust based on your table structure
+            var symbol = cells[1].innerText.trim(); // Symbol column
+            var RSIAction = cells[1].innerText.trim(); // RSI column
+            var DecisionAction = cells[6].innerText.trim(); // Final Decision column
+            var MACDAction = cells[1].innerText.trim(); // MACD Action column
+
+            console.log("Symbol:", symbol);
+            console.log("RSIAction:", RSIAction);
+            console.log("DecisionAction:", DecisionAction);
+            console.log("MACDAction:", MACDAction);
+
+            // Check if previous action exists for this symbol and if it's different
+            if ((dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) || 
+                (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction && DecisionAction === 'Sell') || 
+                (dpreviousActionsMACD.hasOwnProperty(symbol) && dpreviousActionsMACD[symbol] !== MACDAction)) {
+                
+                var message = symbol + ": ";
+                
+                // Check for changes in RSI Action
+                if (dpreviousActions.hasOwnProperty(symbol) && dpreviousActions[symbol] !== RSIAction) {
+                    message += "Decision changed from " + dpreviousActions[symbol] + " to " + RSIAction + ".\n";
+                }
+                
+                // Check for changes in Final Decision Action
+                if (dpreviousActionsM.hasOwnProperty(symbol) && dpreviousActionsM[symbol] !== DecisionAction) {
+                    message += "Decision changed from " + dpreviousActionsM[symbol] + " to " + DecisionAction + ".\n";
+                }
+
+                // Check for changes in MACD Action
+                if (dpreviousActionsMACD.hasOwnProperty(symbol) && dpreviousActionsMACD[symbol] !== MACDAction) {
+                    message += "Buy Indicator changed from " + dpreviousActionsMACD[symbol] + " to " + MACDAction + ".\n";
+                }
+                
+                alert(message);
+                console.log("Alert triggered for Symbol", symbol + ":", message);
+            }
+            // Update previous actions for this symbol
+            dpreviousActions[symbol] = RSIAction;
+            dpreviousActionsM[symbol] = DecisionAction;
+            dpreviousActionsMACD[symbol] = MACDAction;
+            console.log("Updated Previous Actions for Symbol", symbol + ":", RSIAction, DecisionAction, MACDAction);
+        }
+    });
+
+    // Store updated previous actions in sessionStorage
+    sessionStorage.setItem('dpreviousActions', JSON.stringify(dpreviousActions));
+    sessionStorage.setItem('dpreviousActionsM', JSON.stringify(dpreviousActionsM));
+    sessionStorage.setItem('dpreviousActionsMACD', JSON.stringify(dpreviousActionsMACD));
+}
+        
+
+
+        window.onload = function() {
+            checkAlerts();
+            startAutoRefresh();
+        };
+    </script>
+    <script>
+        function showWatchlist() {
+            window.location.href = '/show_watchlist';
+        }
+    </script>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">MyApp</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/">Home</a>
+                </li>
+                
+                <li class="nav-item">
+                    <a class="nav-link" href="/input_symbol">Search</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/delivery">Stock</a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="/intraday">Intraday</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/show_watchlist">Watchlist</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/show_watchlist_int">Intra Watchlist</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/both?symbols=superbuy">Both Intrabuy</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <h5>Market Sentiment: <span><b>{{ vix_senti }}</b></span></h5>
+        <div class="result">
+            <table>
+                <tr>
+                    <td>VIX: <span>{{ vix if vix is not none else "Data not available" }}</span><br></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+    <div class="container">
+        <p id="refreshStatus" style="font-weight: bold; margin-bottom: 10px;"></p>
+        <p id="refreshTime" style="font-style: italic; margin-bottom: 10px;"></p>
+        <button onclick="startAutoRefresh()">Resume Auto Refresh</button>
+        <button onclick="pauseAutoRefresh()">Pause Auto Refresh</button>
+        <button onclick="downloadCSV()">Download CSV</button>
+        <button onclick="addToWatchlist()">Add to Watchlist</button>
+        <button onclick="showWatchlist()">Show Watchlist</button>
+        <br><br><br>
+        <div id="watchlistContainer"></div>
+    </div>
+    <div class="container">
+        <h1>Stock Analysis</h1>
+        <p>Last Refreshed: {{ last_refreshed }}</p>
+        <h5><b>Important Indicators:</b> </h5>
+        <h6><b>Buy:</b> When in Orange or Blue
+        <h6><b>Watch/Hold:</b> When in Green</h6>
+        <h6><b>Sell:</b> When in White</h6>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Watchlist</th>
+                    <th>Symbol</th>
+                    <th>LTP</th>
+                    <th>Change %</th>
+                    <th>Target</th>
+                    <th>Stoploss</th>
+                    <th>Final Decision</th>
+                    <th>Predicted price</th>
+                    <th>Buy</th>
+                    <th>Sell</th>
+                    <th>Hold</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for result in results %}
+                
+                {% if result.LTP <= result.stoploss %}
+                    <tr class="stoploss-decision">
+                
+                {% elif result.decision == 'Super Buy' %}
+                    <tr class="superbuy-decision">
+                {% elif result.decision == 'Intra Buy'%}
+                    <tr class="intrabuy-decision">
+                {% elif result.decision == 'Buy' %}
+                    <tr class="buy-decision">
+                {% else %}
+                    <tr>
+                {% endif %}
+                
+                    <td><input type="checkbox" name="watchlist" value="{{ result.symbol }}"></td>
+                    <td>{{ result.symbol }}</td>
+                    
+                    <td>{{ result.LTP }}</td>
+                    <td>{{ result.pChange }}</td>
+                    <td>{{ result.target }}</td>
+                    <td>{{ result.stoploss }}</td>
+                   
+                    <td>{{ result.decision }}</td>
+                    <td>{{ predicted_price }}</td>
+                    <td>{{ result.buy }}</td>
+                    <td>{{ result.sell }}</td>
+                    <td>{{ result.hold }}</td>
+                    <td>
+                        <!-- Add form for the button -->
+                        <form action="/analysis/{{ result.symbol }}" method="get" target="_blank">
+                            <button type="submit" class="btn btn-primary">Analyze</button>
+                        </form>
+                    </td>
+                    
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div> 
+</body>
+</html>

@@ -291,6 +291,12 @@ function checkAlerts() {
                             <button type="submit" class="btn btn-primary">Analyze</button>
                         </form>
                     </td>
+                    <td>
+                        <!-- Add form for the button -->
+                        <form action="/predicted_price/{{ result.symbol }}" method="get" target="_blank">
+                            <button type="submit" class="btn btn-primary">Predict</button>
+                        </form>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
