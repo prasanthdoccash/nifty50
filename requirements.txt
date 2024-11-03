@@ -9,5 +9,5 @@ requests
 ta
 flask_caching
 numpy
-sklearn.preprocessing
+scikit-learn
 tensorflow
