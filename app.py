@@ -21,7 +21,7 @@ from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 
-#Start for deployment
+#Start for deploymentt
 import os
 import shutil
 cache_dir = '/opt/render/.cache/nsehistory-stock'
