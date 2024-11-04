@@ -18,28 +18,15 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning)
 
 
-
-#Start for deploymentt
-import os
-import shutil
-cache_dir = '/opt/render/.cache/nsehistory-stock'
-# Check if the directory exists
-if os.path.exists(cache_dir):
-    # Remove the directory and all its contents
-    shutil.rmtree(cache_dir)
-    print(f"Deleted existing directory '{cache_dir}'.")
-
-# Now create the directory
-os.makedirs(cache_dir)
-#stop for deployment
-
 #from news import merger
 #final_decision_news = merger()
 
 def predict(df):
+    
     from sklearn.preprocessing import MinMaxScaler
     from tensorflow.keras.models import Sequential
     from tensorflow.keras.layers import LSTM, Dense
+        
     
     if df.empty:
         return "No data found for the given stock symbol."
@@ -74,11 +61,11 @@ def predict(df):
     # Predict the next day's price
     predicted_price_scaled = model.predict(last_60_days)
     predicted_price = scaler.inverse_transform(predicted_price_scaled)
-    
+    print(predicted_price[0][0])
     # Display the result
    # result = f"Predicted price for the next day for {symbol}: {predicted_price[0][0]:.2f}"
     #return result
-    print(predicted_price[0][0])
+    
     return predicted_price[0][0]
 
 def trendlyne():
@@ -90,7 +77,19 @@ def trendlyne():
     df_csv = df_csv.dropna(subset=[df_csv.columns[0]], how='all')
     final_decision_news = df_csv
     return final_decision_news
+#Start for deployment
+import os
+import shutil
+cache_dir = '/opt/render/.cache/nsehistory-stock'
+# Check if the directory exists
+if os.path.exists(cache_dir):
+    # Remove the directory and all its contents
+    shutil.rmtree(cache_dir)
+    print(f"Deleted existing directory '{cache_dir}'.")
 
+# Now create the directory
+os.makedirs(cache_dir)
+#stop for deployment
 
 app = Flask(__name__)
 def calculate_supertrend(df, atr_period, multiplier):
@@ -169,7 +168,7 @@ def apply_supertrend_strategy(df):
             df['Final Signal'][-1] = 'Sell'
     
     return df['Final Signal'][-1]
-def calculate_indicators(df,num2=5,windows=14):
+def calculate_indicators(df,num2=5,windows=8):
     
     if num2 == 5: #delivery
     #     df =  df[(df.index.hour == 0) & (df.index.minute == 0)] 
@@ -570,7 +569,7 @@ nse = NSELive()
 # Caching stock data fetching
 #@lru_cache(maxsize=1000)
 def fetch_delivery_data(symbols, num1):
-   
+    print("symbols data fetching in progress...")
     all_data = {}
     for symbol in symbols:
         
@@ -593,7 +592,7 @@ def fetch_delivery_data(symbols, num1):
         
         if not df.empty:
             all_data[symbol] = df
-    
+    print("symbols data fetching completed.")
     return all_data
 
 
@@ -704,13 +703,14 @@ def tech_superbuy():
         
         if news_tech =='SuperBuy' or news_tech =='IntraBuy'or news_tech =='Buy' or news_tech =='Watch':
             results1.append(news_symb1)
+    
     return results1
 
 
 
 @app.route('/')
 def home():
-    _,vix,vix_senti = 0,0,0 #calculate_vix('^INDIAVIX')
+    _,vix,vix_senti = calculate_vix('^INDIAVIX')
     return render_template('index.html',vix=vix,vix_senti=vix_senti)
    
 
@@ -727,7 +727,7 @@ def input_symbol():
 
 
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
-sunday = (datetime.now() - timedelta(days=2)).strftime('%Y-%m-%d')
+sunday = (datetime.now() - timedelta(days=4)).strftime('%Y-%m-%d')
 
 #@app.route('/delivery')
 def delivery(symbols_get):
@@ -754,7 +754,7 @@ def delivery(symbols_get):
         elif symbols1 == 'superbuy':
             
             symbols = tech_superbuy()
-        
+            
         else:
             symbols = symbols1.split(',') if symbols1 else predefined_symbols
     
@@ -763,14 +763,14 @@ def delivery(symbols_get):
     
     data = fetch_delivery_data(symbols,0)
     
-    _,vix,vix_senti = 0,0,0 #calculate_vix('^INDIAVIX')
+    _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
     now = 0
     i=1
     # if symbols_get == "":
     #     if symbols1 == 'superbuy':
     final_decision_news1 = trendlyne()
-    
+  
     
     for symbol, df in data.items():
         try:
@@ -801,13 +801,14 @@ def delivery(symbols_get):
             
             #open_price = df['Open'].iloc[-1]
             # Select the 9:15 AM data for today
-            
+           
             try:
                 open_price = df['Close'].loc[yesterday].iloc[-1]
             except:
                 open_price = df['Close'].loc[sunday].iloc[-1]
-            
+           
             open_price=round(open_price,2)
+            
             stoploss = open_price - (open_price*0.01)
             stoploss=round(stoploss,2)
             pChange = last_Price - open_price
@@ -891,6 +892,7 @@ def predicted_price(symbol):
     results,last_refreshed,vix,vix_senti,df = delivery(symbol)
     
     predicted_price = predict(df)
+    predicted_price = round(predicted_price,2)
     return render_template('delivery_analysis1.html',predicted_price=predicted_price ,results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
 
 
@@ -926,7 +928,7 @@ def intraday(symbols_get):
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     data = fetch_delivery_data(symbols,1)
-    _,vix,vix_senti = 0,0,0 #calculate_vix('^INDIAVIX')
+    _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
     new=5
     
@@ -954,7 +956,7 @@ def intraday(symbols_get):
             pChange = last_Price - open_price
             pChange=round((pChange/open_price)*100,2)   
             
-             
+            
 
             
             #supertrend = apply_supertrend_strategy(df)
@@ -1082,6 +1084,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    #app.run(debug=True)
+    #app.run(debug=False)
 
     app.run(debug=True, host='0.0.0.0', port=80)
