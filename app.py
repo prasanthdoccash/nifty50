@@ -881,7 +881,7 @@ def view_stock_analysis(symbol):
 @app.route('/delivery')
 def delivery1():
     symb = ''
-    results,last_refreshed,vix,vix_senti,df = delivery(symb)
+    results,last_refreshed,vix,vix_senti,_ = delivery(symb)
     
     return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
 
@@ -948,7 +948,10 @@ def intraday(symbols_get):
             
             #open_price = df['Open'].iloc[-1]
             # Select the 9:15 AM data for today
-            open_price = df['Close'].loc[yesterday].iloc[-1]
+            try:
+                open_price = df['Close'].loc[yesterday].iloc[-1]
+            except:
+                open_price = df['Close'].loc[sunday].iloc[-1]
             
             open_price=round(open_price,2)
             stoploss = open_price - (open_price*0.01)
@@ -1021,7 +1024,7 @@ def both():
     symb = ''  
     results_i,last_refreshed,vix,vix_senti = intraday(symb)
     
-    results,last_refreshed,vix,vix_senti = delivery(symb)
+    results,last_refreshed,vix,vix_senti,_ = delivery(symb)
     zipped_results = zip(results, results_i)
     return render_template('both.html', zipped_results=zipped_results, last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
    
@@ -1058,7 +1061,7 @@ def get_watchlist():
 def show_watchlist():
     symbols = get_watchlist_symbols()
     
-    results,last_refreshed,vix,vix_senti = delivery(symbols)
+    results,last_refreshed,vix,vix_senti,_ = delivery(symbols)
     return render_template('show_delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix, vix_senti=vix_senti)
 
 # Set pandas option to avoid future warnings
