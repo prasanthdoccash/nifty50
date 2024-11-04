@@ -22,7 +22,7 @@ warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning
 #final_decision_news = merger()
 
 def predict(df):
-    
+    print(df)
     from sklearn.preprocessing import MinMaxScaler
     from tensorflow.keras.models import Sequential
     from tensorflow.keras.layers import LSTM, Dense
@@ -518,7 +518,7 @@ def final_decision(df,vix,news_tech,news_pcr,pChange):
         decision = 'Super Buy'
     elif sell_signals >= 4 and buy_signals < 2:
         decision = 'Sell'
-    elif buy_signals >= 3 and hold_signals >= 2 and buy_signals >sell_signals:
+    elif buy_signals >= 3 and hold_signals >= 2 and buy_signals >sell_signals and pChange >0:
         decision = 'Buy'
     elif hold_signals > buy_signals and hold_signals > sell_signals:
         decision = 'Hold'
@@ -561,6 +561,7 @@ def final_decision(df,vix,news_tech,news_pcr,pChange):
         decision = 'Intra Buy'
     if pChange >1 and decision == 'Super Buy' and ('Tech Buy' in buy or 'Tech Watch' in buy):
         decision = 'Buy'
+   
     return decision,buy_signals,sell_signals,hold_signals, buy,sell,hold
     
 
@@ -595,7 +596,45 @@ def fetch_delivery_data(symbols, num1):
     print("symbols data fetching completed.")
     return all_data
 
+# New function to handle parallel processing
+def fetch_delivery_data_parallel(symbols, num1):
+    all_data = {}
+    print("symbols data fetching in progress...")
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        # Create a future for each symbol
+        future_to_symbol = {executor.submit(fetch_single_symbol_data, symbol, num1): symbol for symbol in symbols}
+        
+        for future in concurrent.futures.as_completed(future_to_symbol):
+            symbol = future_to_symbol[future]
+            try:
+                data = future.result()
+                if data is not None:
+                    all_data[symbol] = data
+            except Exception as e:
+                print(f"Error fetching data for {symbol}: {e}")
+    print("symbols data fetching Completed.")
+    return all_data
 
+# Helper function to fetch data for a single symbol
+def fetch_single_symbol_data(symbol, num1):
+    stock = yf.Ticker(symbol)
+    if num1 == 0:
+        df = stock.history(period="1mo", interval="15m")
+    else:
+        df = stock.history(period="5d", interval="15m")
+
+    df['pe'] = stock.info.get('trailingPE')
+    df['eps'] = stock.info.get('trailingEps')
+
+    if not df.empty:
+        checkpe = df['pe'].iloc[-1]
+        checkeps = df['eps'].iloc[-1]
+        if checkpe is None:
+            df['pe'] = 0
+        if checkeps is None:
+            df['eps'] = 0
+
+    return df if not df.empty else None
 
 # def fetch_price_data(symbol):
 #     dq = {}
@@ -761,7 +800,7 @@ def delivery(symbols_get):
     
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    data = fetch_delivery_data(symbols,0)
+    data = fetch_delivery_data_parallel(symbols,0)
     
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
@@ -801,22 +840,25 @@ def delivery(symbols_get):
             
             #open_price = df['Open'].iloc[-1]
             # Select the 9:15 AM data for today
-           
+            
             try:
                 open_price = df['Close'].loc[yesterday].iloc[-1]
             except:
-                open_price = df['Close'].loc[sunday].iloc[-1]
+                open_price = df['Close'].loc[sunday]
            
             open_price=round(open_price,2)
             
+            open_price = open_price.iloc[-1]
             stoploss = open_price - (open_price*0.01)
             stoploss=round(stoploss,2)
+           
             pChange = last_Price - open_price
-            pChange=round((pChange/open_price)*100,2)   
-
+            pChange=round((pChange/open_price)*100,2)  
+            #pChange=pChange.iloc[-1] 
+            
             target = open_price + (open_price*0.012)
             target = round(target,2)
-            
+           
             # for index, row in final_decision_news.iterrows():
                 
             #     news_symb1 =row['Stock Symbol']
@@ -864,7 +906,7 @@ def delivery(symbols_get):
         except KeyError as e:
             print(f"KeyError: {str(e)}. Skipping symbol {symbol}.")
             continue
-    
+   
     return results,last_refreshed,vix,vix_senti,df
 
 @app.route('/analysis/<symbol>', methods=['GET'])
@@ -882,6 +924,7 @@ def view_stock_analysis(symbol):
 def delivery1():
     symb = ''
     results,last_refreshed,vix,vix_senti,_ = delivery(symb)
+    results = sorted(results, key=lambda x: x['pChange'], reverse=True)
     
     return render_template('delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
 
@@ -927,7 +970,7 @@ def intraday(symbols_get):
     
     last_refreshed = dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
-    data = fetch_delivery_data(symbols,1)
+    data = fetch_delivery_data_parallel(symbols,1)
     _,vix,vix_senti = calculate_vix('^INDIAVIX')
     results = []
     new=5
@@ -951,14 +994,15 @@ def intraday(symbols_get):
             try:
                 open_price = df['Close'].loc[yesterday].iloc[-1]
             except:
-                open_price = df['Close'].loc[sunday].iloc[-1]
+                open_price = df['Close'].loc[sunday]
             
             open_price=round(open_price,2)
+            open_price = open_price.iloc[-1]
             stoploss = open_price - (open_price*0.01)
             stoploss=round(stoploss,2)
             pChange = last_Price - open_price
             pChange=round((pChange/open_price)*100,2)   
-            
+            pChange=pChange.iloc[-1] 
             
 
             
@@ -1032,7 +1076,7 @@ def both():
 def intraday1():
     symb = ''
     results,last_refreshed,vix,vix_senti = intraday(symb)
-    
+    results = sorted(results, key=lambda x: x['pChange'], reverse=True)
     return render_template('intraday_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
    
 @app.route('/add_to_watchlist', methods=['POST'])
@@ -1062,6 +1106,8 @@ def show_watchlist():
     symbols = get_watchlist_symbols()
     
     results,last_refreshed,vix,vix_senti,_ = delivery(symbols)
+    results = sorted(results, key=lambda x: x['pChange'], reverse=True)
+    
     return render_template('show_delivery_analysis.html', results=results,last_refreshed=last_refreshed,vix=vix, vix_senti=vix_senti)
 
 # Set pandas option to avoid future warnings
