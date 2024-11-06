@@ -1,9 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify
+from flask import Flask, render_template, request, redirect, url_for, jsonify, send_from_directory
 import datetime as dt
 from jugaad_data.nse import NSELive,stock_df
 import pandas as pd
 import ta
-from datetime import date, timedelta,datetime
+from datetime import date, timedelta,datetime,time
 import numpy as np
 import yfinance as yf
 from ta.momentum import RSIIndicator, StochasticOscillator
@@ -22,7 +22,7 @@ warnings.simplefilter(action='ignore', category=pd.errors.SettingWithCopyWarning
 #final_decision_news = merger()
 
 def predict(df):
-    print(df)
+    
     from sklearn.preprocessing import MinMaxScaler
     from tensorflow.keras.models import Sequential
     from tensorflow.keras.layers import LSTM, Dense
@@ -518,7 +518,7 @@ def final_decision(df,vix,news_tech,news_pcr,pChange):
         decision = 'Super Buy'
     elif sell_signals >= 4 and buy_signals < 2:
         decision = 'Sell'
-    elif buy_signals >= 3 and hold_signals >= 2 and buy_signals >sell_signals and pChange >0:
+    elif buy_signals >= 3 and hold_signals >= 2 and buy_signals >sell_signals and pChange >=0:
         decision = 'Buy'
     elif hold_signals > buy_signals and hold_signals > sell_signals:
         decision = 'Hold'
@@ -531,27 +531,27 @@ def final_decision(df,vix,news_tech,news_pcr,pChange):
     if 'Hold' in buy and ('supertrend' in hold or 'supertrend' in buy):
         decision = 'Hold'
 
-    if pChange >1 and 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'RSI' in buy and 'MACD Cross' in buy and  'Strong ROC Buy' in buy and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
+    if (pChange >1 or pChange ==0) and 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'RSI' in buy and 'MACD Cross' in buy and  'Strong ROC Buy' in buy and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
-    elif pChange >1 and 'supertrend' in buy and 'PCR SuperBuy' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
+    elif (pChange >1 or pChange ==0) and 'supertrend' in buy and 'PCR SuperBuy' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
     elif 'supertrend' in buy and ('ROC Momentum Increase' in buy or 'Volume Trend Increase' in buy or 'ADX Trend Change Buy' in buy or 'Stochastic Divergence Buy' in buy or 'EMA Crossover Strengthening' in buy) and 'Super Buy' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Watch'
     
-    if pChange >1 and ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and  'Super Buy' in buy:
+    if (pChange >1 or pChange ==0) and ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and  'Super Buy' in buy:
         decision = 'Super Buy'
     if ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'Buy' in buy :
         decision = 'Watch'
 
-    if pChange >1 and 'supertrend' in buy  and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and ('Buy' in buy or 'Super Buy' in buy ) and (decision == 'Buy' or decision == 'Super Buy'):
+    if (pChange >1 or pChange ==0) and 'supertrend' in buy  and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and ('Buy' in buy or 'Super Buy' in buy ) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Super Buy'
-    elif pChange >1 and 'supertrend' in hold and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'Hold' in buy and (decision == 'Buy' or decision == 'Super Buy'):
+    elif (pChange >1 or pChange ==0) and 'supertrend' in hold and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'Hold' in buy and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Watch'
     elif ('supertrend' in buy or 'supertrend' in hold) and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and ('Sell' in buy or 'PE' in buy) and (decision == 'Buy' or decision == 'Super Buy'):
         decision = 'Hold'
     #if ('supertrend' in hold and sell_signals <=3 and (decision == 'Buy' or decision == 'Super Buy')):
       #  decision = 'Super Buy'
-    if pChange >1 and 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy') and 'BOLLINGER' not in sell:
+    if (pChange >1 or pChange ==0) and 'supertrend' in buy and 'VWAP Strong Buy' in buy and 'VWAP Trend Up' in buy and ('Tech SuperBuy' in buy or 'Tech IntraBuy' in buy or 'Tech Buy' in buy or 'Tech Watch' in buy) and 'PCR SuperBuy' in buy and 'Strong ROC Buy' in buy and  'MACD Cross' in buy and 'Sell' not in buy and (decision == 'Buy' or decision == 'Super Buy') and 'BOLLINGER' not in sell:
         decision = 'Super Buy'
     
     if decision == 'Super Buy' and  ('Volume Trend Decrease' in sell and pChange <1) :
@@ -559,7 +559,7 @@ def final_decision(df,vix,news_tech,news_pcr,pChange):
 
     if decision == 'Super Buy' and 'Tech IntraBuy' in buy:
         decision = 'Intra Buy'
-    if pChange >1 and decision == 'Super Buy' and ('Tech Buy' in buy or 'Tech Watch' in buy):
+    if (pChange >1 or pChange ==0) and decision == 'Super Buy' and ('Tech Buy' in buy or 'Tech Watch' in buy):
         decision = 'Buy'
    
     return decision,buy_signals,sell_signals,hold_signals, buy,sell,hold
@@ -652,25 +652,25 @@ def fetch_single_symbol_data(symbol, num1):
 
 def calculate_vix(symb):
     #df['VIX'] = ta.volatility.vix(df['HIGH'], df['LOW'], df['CLOSE'])
-    stock = yf.Ticker(symb)
-    df = stock.history(period="1d", interval="1m") # Changed to 5 days to get enough data for indicators
+    # stock = yf.Ticker(symb)
+    # df = stock.history(period="1d", interval="1m") # Changed to 5 days to get enough data for indicators
     
-    df['VIX'] = df['High'].iloc[-1]
-    vix = df['High'].iloc[-1]
-    vix2 = df['High'].iloc[-2]
-    vix3 = vix - vix2
+    # df['VIX'] = df['High'].iloc[-1]
+    # vix = df['High'].iloc[-1]
+    # vix2 = df['High'].iloc[-2]
+    # vix3 = vix - vix2
     
-    vix = round(vix,2)
-    df['VIX_Level'] = df['VIX'].apply(lambda x: 'Low' if x < 15 else 'High')
-    if vix3 > 0:
-        vix_senti = 'Bearish'
+    # vix = round(vix,2)
+    # df['VIX_Level'] = df['VIX'].apply(lambda x: 'Low' if x < 15 else 'High')
+    # if vix3 > 0:
+    #     vix_senti = 'Bearish'
         
-    elif vix < 0:
-        vix_senti = 'Bullish'
-    else: 
-        vix_senti = 'Neutral'
-    return df,vix,vix_senti
-
+    # elif vix < 0:
+    #     vix_senti = 'Bullish'
+    # else: 
+    #     vix_senti = 'Neutral'
+    # return df,vix,vix_senti
+    return 0,0,0
 
 
 # Dummy symbols data for demonstration
@@ -764,6 +764,9 @@ def input_symbol():
     return render_template('input_symbol.html')
 #today = datetime.now().strftime('%Y-%m-%d')
 
+@app.route('/download')
+def download_file():
+    return send_from_directory(directory='.', path='predictML.csv', as_attachment=True)
 
 yesterday = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d')
 sunday = (datetime.now() - timedelta(days=4)).strftime('%Y-%m-%d')
@@ -842,7 +845,7 @@ def delivery(symbols_get):
             # Select the 9:15 AM data for today
             
             try:
-                open_price = df['Close'].loc[yesterday].iloc[-1]
+                open_price = df['Close'].loc[yesterday]
             except:
                 open_price = df['Close'].loc[sunday]
            
@@ -851,7 +854,7 @@ def delivery(symbols_get):
             open_price = open_price.iloc[-1]
             stoploss = open_price - (open_price*0.01)
             stoploss=round(stoploss,2)
-           
+            
             pChange = last_Price - open_price
             pChange=round((pChange/open_price)*100,2)  
             #pChange=pChange.iloc[-1] 
@@ -933,8 +936,45 @@ def predicted_price(symbol):
     
     symbol = [symbol]
     results,last_refreshed,vix,vix_senti,df = delivery(symbol)
-    
+    df['time'] = df.index.time
+    df['date'] = df.index.date
+    # Replace 'df' with your DataFrame variable
+    # Get the current time and date
+    now = datetime.now()
+    current_time = now.time()
+    today = now.date()
+
+    # Determine if we need to look for yesterday's 3:30 PM close price
+    if current_time < time(15, 30):
+        # Select the close price at 3:30 PM of the previous day
+        previous_day_data = df[(df['date'] < today) & (df['time'] <= time(15, 30))].sort_values(by=['date', 'time'], ascending=[False, False])
+        
+        if not previous_day_data.empty:
+            CP_result = previous_day_data.iloc[0]['Close']
+        else:
+            CP_result = None
+            print("No 3:30 PM data found for previous days.")
+    else:
+        # Select the close price at 3:30 PM or the most recent time up to 3:30 PM of today
+        today_data = df[(df['time'] <= time(15, 30)) & (df['date'] == today)].sort_values(by='time', ascending=True)
+        
+        if not today_data.empty:
+            CP_result = today_data.iloc[-1]['Close']
+        else:
+            CP_result = None
+            print("No 3:30 PM data found for today.")
+
+    #print("Selected Close price:", CP_result)
+
+        
     predicted_price = predict(df)
+    if predicted_price >= CP_result:
+        results[0]['decision'] = "Predicted Buy"
+        
+    else:
+        results[0]['decision'] = "Predicted Sell"
+        
+    
     predicted_price = round(predicted_price,2)
     return render_template('delivery_analysis1.html',predicted_price=predicted_price ,results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
 
@@ -1133,6 +1173,6 @@ def get_watchlist_symbols():
 
 
 if __name__ == "__main__":
-    #app.run(debug=False)
+    #app.run(debug=True)
 
     app.run(debug=True, host='0.0.0.0', port=80)
