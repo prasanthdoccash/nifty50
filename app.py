@@ -1076,6 +1076,7 @@ def intraday(symbols_get):
             
             print(i,symbol, decision,"i")
             i=i+1
+            
             # Prepare data for each symbol
             symbol_data = {
                 'symbol': symbol,
