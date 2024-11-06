@@ -61,17 +61,19 @@ def predict(df):
     # Predict the next day's price
     predicted_price_scaled = model.predict(last_60_days)
     predicted_price = scaler.inverse_transform(predicted_price_scaled)
-    print(predicted_price[0][0])
+   
     # Display the result
    # result = f"Predicted price for the next day for {symbol}: {predicted_price[0][0]:.2f}"
     #return result
     
-    return predicted_price[0][0]
+    predicted_price = round(predicted_price[0][0], 2)
+    return predicted_price
 
-def trendlyne():
-    
-    csv_file = 'merged_output.csv'
-    
+def trendlyne(j):
+    if j ==1:
+        csv_file = 'merged_output.csv'
+    else:
+        csv_file = 'predictML.csv'
     df_csv = pd.read_csv(csv_file)
     df_csv.columns = df_csv.columns.str.strip()
     df_csv = df_csv.dropna(subset=[df_csv.columns[0]], how='all')
@@ -721,28 +723,35 @@ predefined_symbols_500 = [f"{symbol}.NS" for symbol in predefined_symbols_5]
 predefined_symbols_m =["ACC.NS", "APLAPOLLO.NS", "AUBANK.NS", "ABCAPITAL.NS", "ABFRL.NS", "ALKEM.NS", "APOLLOTYRE.NS", "ASHOKLEY.NS", "ASTRAL.NS", "AUROPHARMA.NS", "BSE.NS", "BALKRISIND.NS", "BANDHANBNK.NS", "BANKINDIA.NS", "MAHABANK.NS", "BDL.NS", "BHARATFORG.NS", "BHARTIHEXA.NS", "BIOCON.NS", "CGPOWER.NS", "COCHINSHIP.NS", "COFORGE.NS", "COLPAL.NS", "CONCOR.NS", "CUMMINSIND.NS", "DELHIVERY.NS", "DIXON.NS", "ESCORTS.NS", "EXIDEIND.NS", "NYKAA.NS", "FEDERALBNK.NS", "FACT.NS", "GMRINFRA.NS", "GODREJPROP.NS", "HDFCAMC.NS", "HINDPETRO.NS", "HINDZINC.NS", "HUDCO.NS", "IDBI.NS", "IDFCFIRSTB.NS", "IRB.NS", "INDIANB.NS", "INDHOTEL.NS", "IOB.NS", "IREDA.NS", "IGL.NS", "INDUSTOWER.NS", "JSWINFRA.NS", "JUBLFOOD.NS", "KPITTECH.NS", "KALYANKJIL.NS", "LTF.NS", "LICHSGFIN.NS", "LUPIN.NS", "MRF.NS", "M&MFIN.NS", "MRPL.NS", "MANKIND.NS", "MARICO.NS", "MFSL.NS", "MAXHEALTH.NS", "MAZDOCK.NS", "MPHASIS.NS", "MUTHOOTFIN.NS", "NLCINDIA.NS", "NMDC.NS", "OBEROIRLTY.NS", "OIL.NS", "PAYTM.NS", "OFSS.NS", "POLICYBZR.NS", "PIIND.NS", "PAGEIND.NS", "PATANJALI.NS", "PERSISTENT.NS", "PETRONET.NS", "PHOENIXLTD.NS", "POLYCAB.NS", "POONAWALLA.NS", "PRESTIGE.NS", "RVNL.NS", "SBICARD.NS", "SJVN.NS", "SRF.NS", "SOLARINDS.NS", "SONACOMS.NS", "SAIL.NS", "SUNDARMFIN.NS", "SUPREMEIND.NS", "SUZLON.NS", "TATACHEM.NS", "TATACOMM.NS", "TATAELXSI.NS", "TATATECH.NS", "TORNTPOWER.NS", "TIINDIA.NS", "UPL.NS", "IDEA.NS", "VOLTAS.NS", "YESBANK.NS"]
 
 #tech superbuy symbols
-def tech_superbuy():
+def tech_superbuy(k):
     #df_tech = pd.read_excel('auto_updated_with_decisions.xlsx')  # Adjust sheet name if necessary
-    
-    final_decision_news = trendlyne()
-    
+    if k == 1:
+        j=1
+        final_decision_news = trendlyne(j)
+    else:
+        j=2
+        
+        final_decision_news = trendlyne(j)
     
     results1 = []
     for index, row in final_decision_news.iterrows():
         #tech_stock_symbol = row['Stock Symbol']
         #results1.append(tech_stock_symbol) 
+        if j ==1:
 
-        tech_stock_symbol =row['Stock Symbol']
-        news_symb1 =tech_stock_symbol +".NS"
-        
-        news_tech = row['Final Output']
-        
-        
-        
-        
-        if news_tech =='SuperBuy' or news_tech =='IntraBuy'or news_tech =='Buy' or news_tech =='Watch':
-            results1.append(news_symb1)
-    
+            tech_stock_symbol =row['Stock Symbol']
+            news_symb1 =tech_stock_symbol +".NS"
+            news_tech = row['Final Output']
+            if news_tech =='SuperBuy' or news_tech =='IntraBuy'or news_tech =='Buy' or news_tech =='Watch':
+                results1.append(news_symb1)
+        else:
+            
+            tech_stock_symbol =row['symbol']
+            news_symb1 =tech_stock_symbol
+           
+            news_tech = row['decision']
+            if news_tech =='Predicted Buy':
+                results1.append(news_symb1)
     return results1
 
 
@@ -774,7 +783,7 @@ sunday = (datetime.now() - timedelta(days=4)).strftime('%Y-%m-%d')
 #@app.route('/delivery')
 def delivery(symbols_get):
 
-    
+    k=1
     if symbols_get != "":
         
         # Get symbols from predefined or request
@@ -794,9 +803,11 @@ def delivery(symbols_get):
             symbols = predefined_symbols_m
         
         elif symbols1 == 'superbuy':
-            
-            symbols = tech_superbuy()
-            
+            k=1
+            symbols = tech_superbuy(k)
+        elif symbols1 == 'ml':
+            k=2
+            symbols = tech_superbuy(k)    
         else:
             symbols = symbols1.split(',') if symbols1 else predefined_symbols
     
@@ -811,7 +822,7 @@ def delivery(symbols_get):
     i=1
     # if symbols_get == "":
     #     if symbols1 == 'superbuy':
-    final_decision_news1 = trendlyne()
+    final_decision_news1 = trendlyne(k)
   
     
     for symbol, df in data.items():
@@ -819,17 +830,25 @@ def delivery(symbols_get):
 
             # Calculate indicators
             for index, row in final_decision_news1.iterrows():
+                if k ==1:    
+                    news_symb =row['Stock Symbol']
+                    news_symb1 =news_symb +".NS"
                     
-                news_symb =row['Stock Symbol']
-                news_symb1 =news_symb +".NS"
-                
-                if symbol == news_symb1:
-                    news_decision_t = row['Final Output']
+                    if symbol == news_symb1:
+                        news_decision_t = row['Final Output']
+                    else:
+                        news_decision_t = 'Hold'  
+                else:
+                    news_symb =row['symbol']
+                    news_symb1 =news_symb +".NS"
                     
+                    if symbol == news_symb1:
+                        news_decision_t = row['decision']  
+                    else:
+                        news_decision_t = 'Hold' 
                     #news_decision_pcr = row['Final Decision']
                     break
-                else:
-                    news_decision_t = 'Hold'  
+                
                     #news_decision_pcr = 'Hold' 
             
             news_tech = news_decision_t
@@ -944,15 +963,15 @@ def predicted_price(symbol):
     current_time = now.time()
     today = now.date()
 
-    # Determine if we need to look for yesterday's 3:30 PM close price
-    if current_time < time(15, 30):
+    # If the time is before 9.30am today then will pick yesterday's close price else today's last 15m candle close price.
+    if current_time < time(9, 30):
         # Select the close price at 3:30 PM of the previous day
         previous_day_data = df[(df['date'] < today) & (df['time'] <= time(15, 30))].sort_values(by=['date', 'time'], ascending=[False, False])
         
         if not previous_day_data.empty:
             CP_result = previous_day_data.iloc[0]['Close']
         else:
-            CP_result = None
+            CP_result = 1
             print("No 3:30 PM data found for previous days.")
     else:
         # Select the close price at 3:30 PM or the most recent time up to 3:30 PM of today
@@ -961,19 +980,27 @@ def predicted_price(symbol):
         if not today_data.empty:
             CP_result = today_data.iloc[-1]['Close']
         else:
-            CP_result = None
+            CP_result = 1
             print("No 3:30 PM data found for today.")
 
-    #print("Selected Close price:", CP_result)
-
+    
         
     predicted_price = predict(df)
+    CP_result  = round(CP_result,2) 
+  
+    percent = (predicted_price - CP_result)/CP_result*100
+    percent= round(percent,2) 
     if predicted_price >= CP_result:
-        results[0]['decision'] = "Predicted Buy"
+        if percent >= 1.2:
+            results[0]['decision'] = "Predicted Buy"
+        else:
+            results[0]['decision'] = "Predicted Watch"
         
     else:
+
         results[0]['decision'] = "Predicted Sell"
-        
+
+          
     
     predicted_price = round(predicted_price,2)
     return render_template('delivery_analysis1.html',predicted_price=predicted_price ,results=results,last_refreshed=last_refreshed,vix=vix,vix_senti=vix_senti)
@@ -1076,7 +1103,6 @@ def intraday(symbols_get):
             
             print(i,symbol, decision,"i")
             i=i+1
-            
             # Prepare data for each symbol
             symbol_data = {
                 'symbol': symbol,
